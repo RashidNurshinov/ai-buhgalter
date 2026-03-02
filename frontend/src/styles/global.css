@@ -1,0 +1,69 @@
+/**
+ * Глобальные стили приложения.
+ */
+
+/* Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100%;
+}
+
+/* Плавные переходы для Ant Design Layout */
+.ant-layout-sider {
+  transition: all 0.2s ease;
+}
+
+/* Скроллбар */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
+
+/* Адаптивность: на мобильных убираем отступ под сайдбар */
+@media (max-width: 767px) {
+  .app-main-layout {
+    margin-left: 0 !important;
+  }
+}
+
+/* Утилиты */
+.text-center {
+  text-align: center;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}
+
+.mb-16 {
+  margin-bottom: 16px;
+}

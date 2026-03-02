@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # === PostgreSQL ===
+  postgres:
+    image: postgres:16-alpine
+    container_name: ai_buhgalter_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ai_buhgalter
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # === Redis ===
+  redis:
+    image: redis:7-alpine
+    container_name: ai_buhgalter_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # === Backend (FastAPI) ===
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: ai_buhgalter_backend
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app
+      - ../storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # === Celery Worker ===
+  celery_worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: ai_buhgalter_celery_worker
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    volumes:
+      - ../backend:/app
+      - ../storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A app.core.celery_app worker --loglevel=info --concurrency=2
+
+  # === Celery Beat (планировщик) ===
+  celery_beat:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: ai_buhgalter_celery_beat
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    volumes:
+      - ../backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A app.core.celery_app beat --loglevel=info
+
+  # === Frontend (React dev server) ===
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: ai_buhgalter_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0 --port 3000
+
+volumes:
+  postgres_data:

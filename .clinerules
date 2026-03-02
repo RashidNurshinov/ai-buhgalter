@@ -1,0 +1,330 @@
+## КОНТЕКСТ ПРОЕКТА «ИИ-Бухгалтер»
+
+### Что это
+Веб-приложение для автоматизации бухгалтерского и налогового учёта ИП на УСН «Доходы минус расходы» + НДС 22% (Россия, 2026 год).
+
+### Технологический стек
+- **Backend:** Python 3.12, FastAPI, SQLAlchemy 2.0 (async), Alembic, Celery + Redis, PostgreSQL
+- **Frontend:** React 18, TypeScript, Vite, Ant Design (или shadcn/ui), Zustand/React Query
+- **ИИ:** OpenRouter API (Claude Sonnet/Haiku, Gemini), Tesseract OCR, EasyOCR
+- **Инфраструктура:** Docker Compose, nginx
+
+### Ключевые файлы-справочники (ЧИТАЙ ПЕРЕД НАПИСАНИЕМ КОДА)
+1. `СПРАВОЧНИК_СУЩНОСТЕЙ.md` — ВСЕ модели, поля, типы, enum-ы, именование. СВЕРЯЙСЯ при создании/изменении любого кода.
+2. `ПЛАН_РЕАЛИЗАЦИИ.md` — чеклист всех задач с галочками. **НЕ перезаписывай этот файл.** После реализации — сообщи пользователю список выполненных пунктов (номера), пользователь сам проставит галочки.
+3. `ТЗ_обобщённое.md` — бизнес-логика, формулы расчётов, нормативные ссылки.
+
+### Структура backend
+backend/app/
+├── models/          # SQLAlchemy модели (наследуют BaseModel из base.py)
+├── schemas/         # Pydantic v2 схемы (Create/Update/Response)
+├── api/v1/          # FastAPI роутеры
+├── services/        # Бизнес-логика (сервисный слой)
+├── tasks/           # Celery задачи (task_ prefix)
+├── constants/       # enums.py, tax_rates.py, tax_calendar.py
+├── utils/           # Валидаторы, форматтеры, калькуляторы
+├── prompts/         # Системные промпты для ИИ
+└── core/            # config, database, security, dependencies, redis, celery
+
+### Деплой-инфраструктура
+- **Сервер:** Aeza VPS 138.124.108.144 (root/jlGGd9v9cnhq)
+- **Путь на сервере:** `/opt/ai-buhgalter/`
+- **Docker Compose:** 7 контейнеров (backend, frontend, nginx, postgres, redis, celery_worker, celery_beat)
+- **Порт:** 80 (nginx → frontend + /api → backend:8000)
+- **БД:** PostgreSQL в контейнере `ai_buhgalter_postgres`, база `ai_buhgalter`, user `postgres`
+- **Миграции:** alembic внутри контейнера backend: `docker exec ai_buhgalter_backend alembic upgrade head`
+- **Логи:** `docker logs --tail=30 ai_buhgalter_backend`
+
+---
+
+## ПРАВИЛА НАПИСАНИЯ КОДА
+
+### Модели (SQLAlchemy)
+- Наследуй от `BaseModel` (`app.models.base`) — он даёт `id` (UUID), `created_at`, `updated_at`
+- **ID — UUID** через `sqlalchemy.dialects.postgresql.UUID(as_uuid=True)`, НЕ String, НЕ Integer
+- Все FK: `ForeignKey("table_name.id", ondelete="CASCADE"|"SET NULL")`
+- **Enum-поля ОБЯЗАТЕЛЬНО с `values_callable`:**
+  ```python
+  Enum(TaxSystem, name="tax_system_enum", values_callable=lambda x: [e.value for e in x])
+  ```
+  Без `values_callable` SQLAlchemy отправит Python-имя (`USN_INCOME_EXPENSE`) вместо значения (`usn_income_expense`)
+- JSONB для произвольных данных: `from sqlalchemy.dialects.postgresql import JSONB`
+- Decimal для денег: `Numeric(15, 2)`, для ставок: `Numeric(5, 2)`
+
+### Alembic миграции — КРИТИЧЕСКИ ВАЖНО
+- **ID и FK колонки ТОЛЬКО `postgresql.UUID(as_uuid=True)`** — НЕ `sa.String(36)`!
+  ```python
+  # ✅ ПРАВИЛЬНО
+  sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True)
+  sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False)
+  
+  # ❌ НЕПРАВИЛЬНО — создаст VARCHAR(36), несовместимый с UUID в ORM
+  sa.Column("id", sa.String(36), primary_key=True)
+  ```
+- **После создания миграции** — обязательно проверь `grep -n "String(36)" alembic/versions/*.py`. Если найдено — замени на UUID
+- **Миграция ДОЛЖНА совпадать с моделью** — если BaseModel использует UUID, миграция тоже должна
+- При ручном написании миграции — используй `from sqlalchemy.dialects import postgresql` и `postgresql.UUID(as_uuid=True)`
+- Enum в миграции: `postgresql.ENUM(..., name="xxx_enum", create_type=False)` + `.create(op.get_bind(), checkfirst=True)`
+
+### Schemas (Pydantic v2)
+- Наследуй от `BaseSchema` (`app.schemas.base`) с `model_config = ConfigDict(from_attributes=True)`
+- Суффиксы: `Create`, `Update`, `Response` — например `DocumentCreate`, `DocumentResponse`
+- Для Optional полей: `field: str | None = None`
+- Для Decimal: используй `Decimal` из стандартной библиотеки
+
+### API роутеры
+- URL-пути в kebab-case: `/api/v1/purchase-book/`, `/api/v1/sales-book/`
+- Файлы роутеров в snake_case: `purchase_book.py`
+- Все эндпоинты требуют `current_user` через `Depends(get_current_user)`
+- Фильтрация данных ВСЕГДА по `user_id` текущего пользователя
+- Используй `PaginatedResponse` для списков
+
+### Сервисы
+- Один сервис = один файл в `services/`
+- Все методы — async
+- Принимают `db: AsyncSession` первым аргументом
+- НЕ импортируй модели внутри роутеров напрямую — используй сервисный слой
+
+### Celery задачи
+- Prefix `task_`: `task_process_uploaded_file`, `task_sync_bank_statements`
+- Используют синхронную сессию БД (отдельный sessionmaker)
+
+### Enum-ы
+- Все в одном файле: `app/constants/enums.py`
+- Наследуют `(str, Enum)` — для JSON-сериализации
+- Значения в snake_case: `usn_income_expense`, `manual_upload`
+
+### Налоговые правила (2026 год, Россия)
+- НДС: 22% (основная), 10% (пониженная), 0% (экспорт). Расчётная: 22/122
+- УСН «Доходы минус расходы»: 15% (базовая), 20% (повышенная при превышении лимитов)
+- Минимальный налог УСН: 1% от доходов (ст. 346.18 НК РФ)
+- Фиксированные взносы ИП: 53 658 руб + 1% с доходов свыше 300 000 руб
+- МРОТ 2026: 22 440 руб
+- НДФЛ: 13% (до 5 млн), 15% (свыше 5 млн)
+- Страховые взносы за сотрудников: 30% (до предела 2 759 000 руб), 15.1% (свыше)
+
+### Паттерн FK-полей
+- `user_id`, `counterparty_id`, `bank_account_id`, `document_id` — прямые владельцы
+- `linked_document_id`, `linked_operation_id`, `linked_receipt_id`, `linked_calculation_id` — связи между сущностями
+
+### Чего НЕ делать
+- НЕ генерируй IP-адреса, пароли, API-ключи из памяти — спроси
+- НЕ создавай новые enum-значения без добавления в enums.py
+- НЕ меняй структуру BaseModel без обновления СПРАВОЧНИКА
+- НЕ используй `sa.String(36)` для ID/FK — только `postgresql.UUID(as_uuid=True)`
+- НЕ используй `Enum(EnumClass)` без `values_callable` — всегда добавляй
+- НЕ пиши SQL напрямую — используй SQLAlchemy ORM
+- НЕ создавай синхронные эндпоинты — всё async
+- **НЕ перезаписывай ПЛАН_РЕАЛИЗАЦИИ.md** — только сообщай пользователю выполненные пункты
+
+### Язык
+- Размышляй на русском языке
+- Комментарии в коде — на русском (docstrings) или английском (inline)
+- Названия переменных/классов/функций — на английском
+
+### После каждого этапа
+1. Перепроверь сделанное
+2. **Сообщи пользователю** номера выполненных пунктов из `ПЛАН_РЕАЛИЗАЦИИ.md` — пользователь сам проставит галочки [x]. **НЕ редактируй** этот файл самостоятельно.
+3. Обнови СПРАВОЧНИК_СУЩНОСТЕЙ.md если менял модели/схемы/enum-ы
+
+---
+
+## СТРАТЕГИЯ РАБОТЫ С ФАЙЛАМИ (инструменты)
+
+### Когда какой инструмент использовать
+| Ситуация | Инструмент | Почему |
+|----------|-----------|--------|
+| Новый файл | `write_to_file` | Единственный вариант |
+| Полная перезапись файла | `write_to_file` | Надёжнее чем множественные replace |
+| Точечная правка 1-10 строк | `replace_in_file` | Быстро, если search-блок точный |
+| Правка markdown (чеклисты) | `write_to_file` | Одинаковые `- [ ]` ломают поиск |
+| Удаление строк | `replace_in_file` | Заменяем на пустую строку |
+
+### Правила для `replace_in_file`
+1. **Search-блок** берётся СТРОГО из последнего `<final_file_content>` — не из памяти
+2. **Перед редактированием** — прочитай файл через `read_file`, чтобы иметь актуальное содержимое
+3. Если `replace_in_file` не сработал с **1-й попытки** — переключайся на `write_to_file`. Не трать время на повторные попытки replace
+4. **Минимизируй search-блок** — 2-5 строк достаточно, но строки должны быть уникальными
+5. **Всегда включай `<diff>`** — это обязательный параметр
+
+### Оптимизация по скорости
+- Группируй связанные изменения в один вызов `write_to_file`, а не делай 5 отдельных `replace_in_file`
+- Создавай файл целиком, даже если он большой — это быстрее, чем 10 мелких правок
+- Если файл > 500 строк и нужна правка в 1 месте — `replace_in_file`. Если правок > 3 — `write_to_file`
+
+---
+
+## ПЕРЕИСПОЛЬЗОВАНИЕ СУЩЕСТВУЮЩЕГО КОДА
+
+### Перед созданием нового — проверь что уже есть
+- `services/xml_parser_service.py` — dataclasses парсинга (`ParsedBankStatement`, `ParsedBankOperation`, `ParsedDocument`, `ParsedDocumentItem`), функции `_extract_vat_from_purpose()`, `validate_inn()`, `validate_kpp()`
+- `services/csv_parser_service.py` — парсинг CSV/Excel, dataclasses (`ParsedOfdReport`, `ParsedInventoryReport`), маппинг колонок, конвертация чисел `_dec()`
+- `utils/file_utils.py` — определение типов файлов, валидация, `detect_encoding()`, `detect_delimiter()`
+- `utils/validators.py` — валидация ИНН, КПП, БИК, р/с
+- `services/openrouter_client.py` — клиент для LLM API с retry, fallback, tool calling
+- `services/ai_agent.py` — AI-агент с циклом observe → think → act → report
+- `constants/enums.py` — ВСЕ enum-ы проекта (единственный источник правды)
+- `services/ocr_service.py` — OCR-пайплайн (preprocess → Tesseract/EasyOCR → LLM → валидация)
+- `prompts/document_recognition.py` — системный промпт для распознавания документов
+
+### Зависимости (уже в requirements.txt)
+pandas, openpyxl, xlrd, chardet, lxml, pdfplumber, Pillow, reportlab
+
+### Паттерн dataclass для парсинга
+```python
+@dataclass
+class ParsedSomething:
+    field: type = default
+    warnings: list[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+    
+    @property
+    def is_valid(self) -> bool:
+        return len(self.errors) == 0
+```
+
+---
+
+## ПОРЯДОК РЕАЛИЗАЦИИ ЗАДАЧИ (чеклист)
+
+### Для каждого блока задач:
+1. **Прочитай задачу** в `ПЛАН_РЕАЛИЗАЦИИ.md` — найди номер пункта
+2. **Прочитай связанные файлы** — модели, схемы, существующие сервисы → понять контракты и интерфейсы
+3. **Проверь существующий код** — возможно, часть уже реализована или есть переиспользуемые компоненты
+4. **Реализуй код** — сначала основная логика, потом edge cases
+5. **Напиши тесты** — минимум: happy path, пустой ввод, невалидные данные, граничные случаи
+6. **Перепроверь** — неиспользуемые импорты, типизация, docstrings
+7. **Сообщи пользователю** номера выполненных пунктов из ПЛАН_РЕАЛИЗАЦИИ.md — **НЕ редактируй файл сам**
+8. **Если менял модели/enum-ы** — обнови `СПРАВОЧНИК_СУЩНОСТЕЙ.md`
+
+### Структура тестов
+```
+backend/tests/
+├── test_<module_name>.py    # Юнит-тесты сервиса/утилиты
+├── conftest.py              # Фикстуры (db session, test client, auth)
+└── fixtures/                # Тестовые файлы (XML, CSV, Excel, изображения)
+```
+
+### Минимальный набор тестов для парсера:
+- Парсинг валидного файла → проверка всех полей
+- Пустой файл → `is_valid == False`, есть сообщение об ошибке
+- Файл без обязательных колонок → понятное сообщение об ошибке
+- Файл с «грязными» данными (пробелы, пустые строки, шапка банка) → корректная обработка
+- Граничные суммы (0, отрицательные, с пробелами, с запятыми)
+
+---
+
+## ДЕПЛОЙ НА СЕРВЕР — ПРАВИЛА И ЧЕКЛИСТ
+
+### Перед деплоем — обязательная проверка согласованности
+1. **Модель ↔ Миграция** — типы колонок в миграции ДОЛЖНЫ совпадать с типами в модели SQLAlchemy
+   - `UUID(as_uuid=True)` в модели → `postgresql.UUID(as_uuid=True)` в миграции, НЕ `sa.String(36)`
+   - `Enum(X, values_callable=...)` в модели → `postgresql.ENUM(...)` в миграции с теми же значениями
+2. **Модель ↔ Схема** — поля Pydantic Response схемы должны совпадать с полями модели
+3. **Схема ↔ API** — `response_model` в роутере должен совпадать с тем, что возвращает сервис
+4. **Проверь `grep -rn "String(36)" alembic/`** — если найдено, это баг
+
+### Процедура деплоя
+```bash
+# 1. Залить код на сервер
+cd /opt/ai-buhgalter && git pull  # или rsync/scp
+
+# 2. Пересобрать контейнеры
+docker compose build --no-cache backend frontend
+
+# 3. Применить миграции
+docker exec ai_buhgalter_backend alembic upgrade head
+
+# 4. Перезапустить (обязательно — asyncpg кеширует prepared statements)
+docker compose restart backend celery_worker celery_beat
+
+# 5. Проверить
+docker logs --tail=20 ai_buhgalter_backend
+curl -s http://localhost/api/v1/auth/register -X POST -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","password":"test12345678","full_name":"Test"}'
+```
+
+### Типичные ошибки деплоя
+| Ошибка | Причина | Решение |
+|--------|---------|---------|
+| `operator does not exist: character varying = uuid` | Миграция создала VARCHAR, а ORM шлёт UUID | Пересоздать миграцию с `postgresql.UUID(as_uuid=True)` |
+| `LookupError: "USN_INCOME_EXPENSE" is not among valid values` | Enum без `values_callable` | Добавить `values_callable=lambda x: [e.value for e in x]` |
+| `InvalidCachedStatementError` | Схема БД изменилась, asyncpg держит старый кеш | `docker restart ai_buhgalter_backend` |
+| `relation "xxx" does not exist` | Миграция не применена | `docker exec ai_buhgalter_backend alembic upgrade head` |
+| `bcrypt.__about__` warning | Версия bcrypt несовместима с passlib | Не критично, работает |
+| Container unhealthy | Зависимость не готова | Проверь healthcheck и depends_on |
+
+### SSH-подключение к серверу (для скриптов деплоя)
+- Использовать retry (3 попытки) с задержкой 5-10 сек — SSH часто даёт `Error reading SSH protocol banner`
+- Timeout на команды: 30 сек обычные, 120 сек для docker build
+- После тяжёлых операций (build, restart) — ждать 5-10 сек перед следующей командой
+
+---
+
+## ТИПИЧНЫЕ ЛОВУШКИ (запомни)
+
+### Python / Pandas
+- `pd.isna(value)` выбрасывает ошибку если `value` — строка → проверяй `isinstance(value, float)` сначала
+- `Decimal("nan")` — невалидно → ловить через `InvalidOperation`
+- `from collections import Counter` — НЕ импортируй внутри циклов, выноси наверх файла
+- `datetime` vs `date` — всегда явно проверяй тип при парсинге дат из разных источников
+- `pd.read_csv()` с `dtype=str` и `keep_default_na=False` — чтобы не получить NaN вместо пустых строк
+
+### Российская специфика CSV/Excel
+- CSV из российских банков — почти всегда `;` как разделитель
+- Кодировка — чаще `Windows-1251`, реже `UTF-8` (с BOM и без)
+- Excel файлы могут иметь «шапку банка» в первых 3-5 строках → пропускай до заголовка таблицы
+- Суммы могут быть в формате `1 234,56` (пробел как разделитель тысяч, запятая — дробная часть)
+- Неразрывный пробел `\xa0` — часто встречается в суммах и ИНН
+- НДС в назначении платежа: `в т.ч. НДС 22% — 1234.56`, `НДС (22%) 1234`, `Без НДС`, `НДС не облагается`
+
+### SQLAlchemy / Alembic — РАСШИРЕННЫЕ ЛОВУШКИ
+- `Enum(EnumClass)` без `name=` → Alembic создаст enum с автоименем, который потом нельзя найти
+- **`Enum(EnumClass)` без `values_callable`** → SQLAlchemy передаст Python-имя (`USN_INCOME_EXPENSE`) вместо значения enum (`usn_income_expense`). ВСЕГДА добавляй `values_callable=lambda x: [e.value for e in x]`
+- **`sa.String(36)` в миграции для UUID** → создаст VARCHAR, а ORM отправит `::UUID` — несовместимо. ВСЕГДА используй `postgresql.UUID(as_uuid=True)`
+- **Расхождение модели и миграции** — BaseModel.id = UUID, а миграция = String(36) → ошибка `operator does not exist: character varying = uuid`. ПРОВЕРЯЙ согласованность!
+- `ondelete="CASCADE"` → не забудь `cascade="all, delete-orphan"` в relationship
+- Decimal поля — `Numeric(15, 2)`, НЕ `Float` (потеря точности)
+- Async session — не забывай `await db.flush()` перед чтением сгенерированных полей
+- **После изменения схемы БД** — обязательно `docker restart` для backend (asyncpg кеширует prepared statements)
+
+### FastAPI / Pydantic
+- `Depends(get_current_user)` — ВСЕГДА добавляй к эндпоинтам (даже GET)
+- `response_model` в декораторе роутера → автоматическая фильтрация полей
+- `Query()` для параметров фильтрации, `Path()` для path-параметров
+- Пагинация: `skip: int = Query(0, ge=0)`, `limit: int = Query(50, ge=1, le=100)`
+
+### Docker / Деплой
+- `docker compose build --no-cache` — если Dockerfile или requirements.txt изменились
+- `docker compose restart` НЕ пересобирает образ — только перезапускает контейнер
+- `docker compose up -d --build` — пересобрать + перезапустить
+- **asyncpg кеширует prepared statements** → после изменения схемы БД ОБЯЗАТЕЛЬНО restart backend
+- **healthcheck** зависимостей — backend не запустится если postgres не healthy
+- Логи: `docker logs --tail=30 <container>` — первое, что смотришь при ошибке
+
+### Скрипты деплоя (paramiko/SSH)
+- SSH: retry 3 раза с задержкой 5-10 сек между попытками
+- Используй `socket.connect()` перед `ssh.connect()` для явного контроля таймаута
+- После `docker restart` — ждать минимум 5 сек перед проверкой
+- Для sed на сервере — проверяй точный паттерн через `grep` ПЕРЕД заменой
+- Всегда делай backup перед модификацией файлов на сервере: `cp file file.bak`
+
+---
+
+## ЧЕКЛИСТ ПЕРЕД КОММИТОМ / ДЕПЛОЕМ
+
+### Код
+- [ ] Все enum-ы с `values_callable` в моделях
+- [ ] Все ID/FK как `postgresql.UUID(as_uuid=True)` в миграциях
+- [ ] Миграция согласована с моделью (типы колонок совпадают)
+- [ ] `response_model` в роутерах совпадает с возвратом сервиса
+- [ ] Нет `sa.String(36)` в миграциях — `grep -rn "String(36)" alembic/`
+- [ ] Нет `Enum(X)` без `values_callable` — `grep -rn "Enum(" app/models/`
+
+### Деплой
+- [ ] Код синхронизирован на сервере
+- [ ] Docker images пересобраны (если менялись зависимости/Dockerfile)
+- [ ] Миграции применены: `alembic upgrade head`
+- [ ] Backend перезапущен (для сброса кеша asyncpg)
+- [ ] Тест регистрации/логина проходит
+- [ ] Логи без ошибок: `docker logs --tail=20 ai_buhgalter_backend`

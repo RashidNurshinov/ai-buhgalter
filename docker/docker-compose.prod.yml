@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  # === PostgreSQL ===
+  postgres:
+    image: postgres:16-alpine
+    container_name: ai_buhgalter_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ai_buhgalter
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+  # === Redis ===
+  redis:
+    image: redis:7-alpine
+    container_name: ai_buhgalter_redis
+    restart: always
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+  # === Backend (FastAPI) ===
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: ai_buhgalter_backend
+    restart: always
+    env_file:
+      - ../.env
+    volumes:
+      - ../storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+    networks:
+      - app_network
+
+  # === Celery Worker ===
+  celery_worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: ai_buhgalter_celery_worker
+    restart: always
+    env_file:
+      - ../.env
+    volumes:
+      - ../storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A app.core.celery_app worker --loglevel=info --concurrency=2
+    networks:
+      - app_network
+
+  # === Celery Beat (планировщик) ===
+  celery_beat:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: ai_buhgalter_celery_beat
+    restart: always
+    env_file:
+      - ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A app.core.celery_app beat --loglevel=info
+    networks:
+      - app_network
+
+  # === Nginx (фронтенд + reverse proxy) ===
+  nginx:
+    build:
+      context: ..
+      dockerfile: docker/nginx/Dockerfile
+    container_name: ai_buhgalter_nginx
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:
+    driver: bridge

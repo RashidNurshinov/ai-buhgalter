@@ -1,0 +1,57 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# === Node.js ===
+node_modules/
+frontend/dist/
+frontend/build/
+.next/
+
+# === Environment ===
+.env
+.env.local
+.env.*.local
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Docker ===
+docker/postgres/data/
+
+# === Storage ===
+storage/uploads/*
+!storage/uploads/.gitkeep
+
+# === Logs ===
+*.log
+logs/
+
+# === Testing ===
+.coverage
+htmlcov/
+.pytest_cache/
+
+# === Celery ===
+celerybeat-schedule
+celerybeat.pid
+
+# === Alembic ===
+# Версии миграций НЕ игнорируем (они важны)
