@@ -53,5 +53,7 @@ from app.api.v1.dashboard import router as dashboard_router
 
 router.include_router(dashboard_router)
 
-# === Будут подключены по мере разработки ===
-# from app.api.v1.documents import router as documents_router
+# === Документы ===
+from app.api.v1.documents import router as documents_router
+
+router.include_router(documents_router)

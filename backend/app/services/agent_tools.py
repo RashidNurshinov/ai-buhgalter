@@ -398,13 +398,94 @@ async def tool_recognize_document(
 async def tool_parse_xml_document(
     db: AsyncSession, user_id: str, **kwargs: Any
 ) -> dict[str, Any]:
-    """Парсинг XML ФНС. Stub — требует интеграции с xml_parser_service."""
+    """Парсинг XML ФНС через xml_parser_service."""
+    import os
+    from app.models.uploaded_file import UploadedFile
+    from app.services.xml_parser_service import (
+        detect_xml_document_type,
+        parse_xml_invoice,
+        parse_xml_upd,
+        parse_xml_torg12,
+        parse_xml_bank_statement,
+        map_parsed_document_to_dict,
+        map_parsed_bank_statement_to_dicts,
+        XmlDocumentType,
+    )
+
     file_id = kwargs.get("file_id", "")
-    return {
-        "status": "not_implemented",
-        "message": f"XML-парсер для файла {file_id} ещё не подключён к tool.",
-        "file_id": file_id,
-    }
+    if not file_id:
+        return {"error": True, "error_message": "file_id не указан"}
+
+    result = await db.execute(
+        select(UploadedFile).where(
+            UploadedFile.id == file_id,
+            UploadedFile.user_id == user_id,
+        )
+    )
+    uploaded_file = result.scalar_one_or_none()
+    if not uploaded_file:
+        return {"error": True, "error_message": f"Файл {file_id} не найден"}
+
+    file_path = uploaded_file.stored_path
+    if not os.path.exists(file_path):
+        return {"error": True, "error_message": f"Файл не найден на диске: {file_path}"}
+
+    with open(file_path, "rb") as f:
+        xml_content = f.read()
+
+    try:
+        xml_type = detect_xml_document_type(xml_content)
+
+        if xml_type in (XmlDocumentType.INVOICE, XmlDocumentType.UPD, XmlDocumentType.TORG12):
+            if xml_type == XmlDocumentType.INVOICE:
+                parsed = parse_xml_invoice(xml_content)
+            elif xml_type == XmlDocumentType.UPD:
+                parsed = parse_xml_upd(xml_content)
+            else:
+                parsed = parse_xml_torg12(xml_content)
+
+            return {
+                "status": "ok",
+                "file_id": file_id,
+                "xml_type": xml_type.value,
+                "doc_type": parsed.doc_type.value,
+                "doc_number": parsed.doc_number,
+                "doc_date": str(parsed.doc_date) if parsed.doc_date else None,
+                "seller_name": parsed.seller.name,
+                "seller_inn": parsed.seller.inn,
+                "total_with_vat": str(parsed.total_with_vat),
+                "vat_amount": str(parsed.vat_amount),
+                "items_count": len(parsed.items),
+                "is_valid": parsed.is_valid,
+                "confidence": str(parsed.confidence_score),
+                "warnings": parsed.warnings,
+                "errors": parsed.errors,
+            }
+        elif xml_type == XmlDocumentType.BANK_STATEMENT_1C:
+            parsed_bs = parse_xml_bank_statement(xml_content)
+            return {
+                "status": "ok",
+                "file_id": file_id,
+                "xml_type": xml_type.value,
+                "doc_type": "bank_statement",
+                "bank_name": parsed_bs.bank_name,
+                "account_number": parsed_bs.account_number,
+                "operations_count": len(parsed_bs.operations),
+                "total_income": str(parsed_bs.total_income),
+                "total_expense": str(parsed_bs.total_expense),
+                "is_valid": parsed_bs.is_valid,
+                "warnings": parsed_bs.warnings,
+                "errors": parsed_bs.errors,
+            }
+        else:
+            return {
+                "status": "error",
+                "file_id": file_id,
+                "error_message": "Не удалось определить тип XML-документа",
+            }
+    except Exception as e:
+        logger.error("XML parse failed for file %s: %s", file_id, e, exc_info=True)
+        return {"error": True, "error_message": f"Ошибка парсинга XML: {str(e)}"}
 
 
 @tool_registry.tool(
@@ -425,13 +506,108 @@ async def tool_parse_xml_document(
 async def tool_parse_table_file(
     db: AsyncSession, user_id: str, **kwargs: Any
 ) -> dict[str, Any]:
-    """Парсинг CSV/Excel. Stub — требует интеграции с csv_parser_service."""
+    """Парсинг CSV/Excel через csv_parser_service."""
+    import os
+    from app.models.uploaded_file import UploadedFile
+    from app.constants.enums import FileType
+    from app.services.csv_parser_service import (
+        parse_csv_bank_statement,
+        parse_excel_bank_statement,
+        parse_csv_ofd_report,
+        parse_excel_inventory,
+    )
+
     file_id = kwargs.get("file_id", "")
-    return {
-        "status": "not_implemented",
-        "message": f"Табличный парсер для файла {file_id} ещё не подключён к tool.",
-        "file_id": file_id,
-    }
+    if not file_id:
+        return {"error": True, "error_message": "file_id не указан"}
+
+    result = await db.execute(
+        select(UploadedFile).where(
+            UploadedFile.id == file_id,
+            UploadedFile.user_id == user_id,
+        )
+    )
+    uploaded_file = result.scalar_one_or_none()
+    if not uploaded_file:
+        return {"error": True, "error_message": f"Файл {file_id} не найден"}
+
+    file_path = uploaded_file.stored_path
+    if not os.path.exists(file_path):
+        return {"error": True, "error_message": f"Файл не найден на диске: {file_path}"}
+
+    with open(file_path, "rb") as f:
+        file_data = f.read()
+
+    file_type = uploaded_file.file_type
+    if isinstance(file_type, str):
+        try:
+            file_type = FileType(file_type)
+        except ValueError:
+            file_type = FileType.OTHER
+
+    try:
+        if file_type == FileType.CSV:
+            parsed_bank = parse_csv_bank_statement(file_data)
+            if parsed_bank.operations:
+                return {
+                    "status": "ok",
+                    "file_id": file_id,
+                    "detected_format": "bank_statement_csv",
+                    "operations_count": len(parsed_bank.operations),
+                    "total_income": str(parsed_bank.total_income),
+                    "total_expense": str(parsed_bank.total_expense),
+                    "is_valid": parsed_bank.is_valid,
+                    "warnings": parsed_bank.warnings,
+                    "errors": parsed_bank.errors,
+                }
+            parsed_ofd = parse_csv_ofd_report(file_data)
+            if parsed_ofd.receipts:
+                return {
+                    "status": "ok",
+                    "file_id": file_id,
+                    "detected_format": "ofd_report_csv",
+                    "receipts_count": len(parsed_ofd.receipts),
+                    "total_sales": str(parsed_ofd.total_sales),
+                    "total_returns": str(parsed_ofd.total_returns),
+                    "total_vat": str(parsed_ofd.total_vat),
+                    "is_valid": parsed_ofd.is_valid,
+                    "warnings": parsed_ofd.warnings,
+                    "errors": parsed_ofd.errors,
+                }
+            return {"status": "warning", "file_id": file_id, "message": "CSV не содержит распознанных данных"}
+
+        elif file_type in (FileType.XLS, FileType.XLSX):
+            parsed_bank = parse_excel_bank_statement(file_data)
+            if parsed_bank.operations:
+                return {
+                    "status": "ok",
+                    "file_id": file_id,
+                    "detected_format": "bank_statement_excel",
+                    "operations_count": len(parsed_bank.operations),
+                    "total_income": str(parsed_bank.total_income),
+                    "total_expense": str(parsed_bank.total_expense),
+                    "is_valid": parsed_bank.is_valid,
+                    "warnings": parsed_bank.warnings,
+                    "errors": parsed_bank.errors,
+                }
+            parsed_inv = parse_excel_inventory(file_data)
+            if parsed_inv.items:
+                return {
+                    "status": "ok",
+                    "file_id": file_id,
+                    "detected_format": "inventory_excel",
+                    "items_count": parsed_inv.total_items,
+                    "total_value": str(parsed_inv.total_value),
+                    "is_valid": parsed_inv.is_valid,
+                    "warnings": parsed_inv.warnings,
+                    "errors": parsed_inv.errors,
+                }
+            return {"status": "warning", "file_id": file_id, "message": "Excel не содержит распознанных данных"}
+        else:
+            return {"error": True, "error_message": f"Неподдерживаемый тип файла: {file_type}"}
+    except Exception as e:
+        logger.error("Table parse failed for file %s: %s", file_id, e, exc_info=True)
+        return {"error": True, "error_message": f"Ошибка парсинга таблицы: {str(e)}"}
 
 
 # ─── ANALYSIS: классификация операций (РЕАЛИЗОВАНО 1.10) ─────
@@ -723,8 +899,87 @@ async def tool_detect_duplicates(
 async def tool_detect_anomalies(
     db: AsyncSession, user_id: str, **kwargs: Any
 ) -> dict[str, Any]:
-    """Поиск аномалий. Stub."""
-    return {"status": "not_implemented", "message": "Поиск аномалий ещё не реализован."}
+    """Поиск аномалий в данных за период."""
+    from datetime import datetime as dt
+    from decimal import Decimal
+    from app.models.bank_operation import BankOperation
+    from app.constants.enums import OperationStatus
+
+    date_from_str = kwargs.get("date_from", "")
+    date_to_str = kwargs.get("date_to", "")
+    try:
+        date_from = dt.strptime(date_from_str, "%Y-%m-%d").date()
+        date_to = dt.strptime(date_to_str, "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return {"error": True, "error_message": "Неверный формат дат. Ожидается YYYY-MM-DD."}
+
+    anomalies: list[dict[str, Any]] = []
+
+    ops_result = await db.execute(
+        select(BankOperation).where(
+            BankOperation.user_id == user_id,
+            BankOperation.operation_date >= date_from,
+            BankOperation.operation_date <= date_to,
+        )
+    )
+    operations = list(ops_result.scalars().all())
+
+    if operations:
+        amounts = [float(op.amount) for op in operations]
+        avg_amount = sum(amounts) / len(amounts)
+        threshold = avg_amount * 3
+        for op in operations:
+            if float(op.amount) > threshold and threshold > 0:
+                anomalies.append({
+                    "type": "large_amount",
+                    "severity": "warning",
+                    "description": f"Необычно большая сумма: {op.amount} руб. (средняя: {avg_amount:.2f})",
+                    "entity_id": str(op.id),
+                })
+
+    expenses_no_docs = [
+        op for op in operations
+        if op.is_expense and op.linked_document_id is None
+        and str(op.category) not in ("taxes_and_fees", "bank_commission", "salary",
+                                      "personal_withdrawal", "cash_withdrawal", "internal_transfer")
+    ]
+    if expenses_no_docs:
+        total_no_docs = sum(float(op.amount) for op in expenses_no_docs)
+        anomalies.append({
+            "type": "expenses_without_documents",
+            "severity": "warning",
+            "description": f"{len(expenses_no_docs)} расх��дов на {total_no_docs:.2f} руб. без документов",
+            "count": len(expenses_no_docs),
+        })
+
+    unclassified = [op for op in operations if op.status == OperationStatus.PENDING]
+    if unclassified:
+        anomalies.append({
+            "type": "unclassified_operations",
+            "severity": "info",
+            "description": f"{len(unclassified)} операций не классифицированы",
+            "count": len(unclassified),
+        })
+
+    income_no_receipts = [
+        op for op in operations
+        if op.is_income and op.linked_receipt_id is None
+        and str(op.category) in ("sales_revenue", "acquiring")
+    ]
+    if income_no_receipts:
+        anomalies.append({
+            "type": "income_without_receipts",
+            "severity": "warning",
+            "description": f"{len(income_no_receipts)} доходов без чеков ОФД",
+            "count": len(income_no_receipts),
+        })
+
+    return {
+        "status": "ok",
+        "period": f"{date_from} — {date_to}",
+        "total_anomalies": len(anomalies),
+        "anomalies": anomalies,
+    }
 
 
 # ─── ACCOUNTING: расчёты и учёт ──────────────────────────────
@@ -1023,8 +1278,125 @@ async def tool_generate_sales_book(
 async def tool_reconcile_data(
     db: AsyncSession, user_id: str, **kwargs: Any
 ) -> dict[str, Any]:
-    """Сверка данных. Stub."""
-    return {"status": "not_implemented", "message": "Сверка данных ещё не реализована."}
+    """Сверка данных между источниками."""
+    from datetime import datetime as dt
+    from decimal import Decimal
+    from app.models.bank_operation import BankOperation
+    from app.models.document import Document
+    from app.models.cash_receipt import CashReceipt
+    from app.models.kudir_entry import KudirEntry
+    from app.constants.enums import DocumentStatus
+
+    reconcile_type = kwargs.get("reconcile_type", "sales")
+    date_from_str = kwargs.get("date_from", "")
+    date_to_str = kwargs.get("date_to", "")
+    try:
+        date_from = dt.strptime(date_from_str, "%Y-%m-%d").date()
+        date_to = dt.strptime(date_to_str, "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return {"error": True, "error_message": "Неверный формат дат. Ожидается YYYY-MM-DD."}
+
+    discrepancies: list[dict[str, Any]] = []
+
+    if reconcile_type == "sales":
+        receipts_result = await db.execute(
+            select(CashReceipt).where(
+                CashReceipt.user_id == user_id,
+                CashReceipt.receipt_date >= dt.combine(date_from, dt.min.time()),
+                CashReceipt.receipt_date <= dt.combine(date_to, dt.max.time()),
+            )
+        )
+        receipts = list(receipts_result.scalars().all())
+        total_receipts = sum(r.total for r in receipts)
+
+        ops_result = await db.execute(
+            select(BankOperation).where(
+                BankOperation.user_id == user_id,
+                BankOperation.operation_date >= date_from,
+                BankOperation.operation_date <= date_to,
+                BankOperation.is_income == True,
+            )
+        )
+        income_ops = list(ops_result.scalars().all())
+        total_income = sum(op.amount for op in income_ops)
+        diff = total_income - total_receipts
+        if abs(diff) > Decimal("1.00"):
+            discrepancies.append({
+                "type": "sales_mismatch",
+                "description": f"Чеки ОФД: {total_receipts}, банк: {total_income}, разница: {diff}",
+            })
+        return {
+            "status": "ok", "reconcile_type": "sales",
+            "receipts_total": str(total_receipts), "bank_income_total": str(total_income),
+            "discrepancies_count": len(discrepancies), "discrepancies": discrepancies,
+        }
+
+    elif reconcile_type == "purchases":
+        docs_result = await db.execute(
+            select(Document).where(
+                Document.user_id == user_id,
+                Document.doc_date >= date_from, Document.doc_date <= date_to,
+                Document.status == DocumentStatus.CONFIRMED,
+            )
+        )
+        documents = list(docs_result.scalars().all())
+        ops_result = await db.execute(
+            select(BankOperation).where(
+                BankOperation.user_id == user_id,
+                BankOperation.operation_date >= date_from,
+                BankOperation.operation_date <= date_to,
+                BankOperation.is_expense == True,
+            )
+        )
+        expense_ops = list(ops_result.scalars().all())
+        unmatched = [op for op in expense_ops if op.linked_document_id is None]
+        if unmatched:
+            discrepancies.append({
+                "type": "expenses_without_invoices",
+                "description": f"{len(unmatched)} расходов без документов",
+                "count": len(unmatched),
+            })
+        return {
+            "status": "ok", "reconcile_type": "purchases",
+            "documents_count": len(documents), "expense_operations_count": len(expense_ops),
+            "unmatched_operations": len(unmatched),
+            "discrepancies_count": len(discrepancies), "discrepancies": discrepancies,
+        }
+
+    elif reconcile_type == "books":
+        quarter = (date_from.month - 1) // 3 + 1
+        year = date_from.year
+        kudir_result = await db.execute(
+            select(KudirEntry).where(
+                KudirEntry.user_id == user_id, KudirEntry.year == year, KudirEntry.quarter == quarter,
+            )
+        )
+        kudir_entries = list(kudir_result.scalars().all())
+        kudir_income = sum(e.income_amount for e in kudir_entries)
+        kudir_expense = sum(e.expense_amount for e in kudir_entries)
+
+        ops_result = await db.execute(
+            select(BankOperation).where(
+                BankOperation.user_id == user_id,
+                BankOperation.operation_date >= date_from,
+                BankOperation.operation_date <= date_to,
+            )
+        )
+        ops = list(ops_result.scalars().all())
+        ops_income = sum(op.amount for op in ops if op.is_income)
+        ops_expense = sum(op.amount for op in ops if op.is_expense)
+        if abs(kudir_income - ops_income) > Decimal("1.00"):
+            discrepancies.append({"type": "income_mismatch", "description": f"КУДиР: {kudir_income}, операции: {ops_income}"})
+        if abs(kudir_expense - ops_expense) > Decimal("1.00"):
+            discrepancies.append({"type": "expense_mismatch", "description": f"КУДиР: {kudir_expense}, операции: {ops_expense}"})
+        return {
+            "status": "ok", "reconcile_type": "books",
+            "kudir_income": str(kudir_income), "kudir_expense": str(kudir_expense),
+            "ops_income": str(ops_income), "ops_expense": str(ops_expense),
+            "discrepancies_count": len(discrepancies), "discrepancies": discrepancies,
+        }
+    else:
+        return {"error": True, "error_message": f"Неизвестный тип сверки: {reconcile_type}"}
 
 
 # ─── REPORTING: декларации (РЕАЛИЗОВАНО 1.13) ────────────────

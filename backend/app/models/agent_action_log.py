@@ -4,8 +4,12 @@
 Архитектура: АРХИТЕКТУРА_AI_AGENT.md → раздел 3, 8
 """
 
-from sqlalchemy import Column, Enum, ForeignKey, Integer, Numeric, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
+import uuid
+from decimal import Decimal
+
+from sqlalchemy import Enum, ForeignKey, Integer, Numeric, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.constants.enums import AgentActionStatus, AgentActionType
 from app.models.base import BaseModel
@@ -22,56 +26,64 @@ class AgentActionLog(BaseModel):
     __tablename__ = "agent_action_logs"
 
     # Владелец
-    user_id = Column(
-        String(32),
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
 
     # Родительское событие
-    event_id = Column(
-        String(32),
+    event_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("agent_events.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
 
     # Тип действия (какой tool вызван)
-    action_type = Column(
-        Enum(AgentActionType, name="agent_action_type_enum"),
+    action_type: Mapped[AgentActionType] = mapped_column(
+        Enum(
+            AgentActionType,
+            name="agent_action_type_enum",
+            values_callable=lambda x: [e.value for e in x],
+        ),
         nullable=False,
         index=True,
     )
 
     # Статус действия
-    status = Column(
-        Enum(AgentActionStatus, name="agent_action_log_status_enum"),
+    status: Mapped[AgentActionStatus] = mapped_column(
+        Enum(
+            AgentActionStatus,
+            name="agent_action_log_status_enum",
+            values_callable=lambda x: [e.value for e in x],
+        ),
         nullable=False,
         default=AgentActionStatus.PENDING,
     )
 
     # Порядковый номер действия в рамках события (step 1, 2, 3...)
-    step_number = Column(Integer, nullable=False, default=1)
+    step_number: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
     # Входные параметры tool call (JSON)
-    input_params = Column(JSONB, nullable=True)
+    input_params: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Результат выполнения tool call (JSON)
-    output_result = Column(JSONB, nullable=True)
+    output_result: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Рассуждение агента перед вызовом (LLM reasoning)
-    agent_reasoning = Column(Text, nullable=True)
+    agent_reasoning: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Длительность выполнения в миллисекундах
-    duration_ms = Column(Integer, nullable=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Токены, потраченные на этот шаг
-    tokens_input = Column(Integer, nullable=False, default=0)
-    tokens_output = Column(Integer, nullable=False, default=0)
+    tokens_input: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    tokens_output: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     # Стоимость в USD (примерная)
-    cost_usd = Column(Numeric(10, 6), nullable=True)
+    cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(10, 6), nullable=True)
 
     # Ошибка (если status = FAILED)
-    error_message = Column(Text, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
