@@ -23,14 +23,14 @@ class TaxCalendarEvent(BaseModel):
         index=True,
     )
     event_type: Mapped[CalendarEventType] = mapped_column(
-        Enum(CalendarEventType, name="calendar_event_type_enum"),
+        Enum(CalendarEventType, name="calendar_event_type_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
     )
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     deadline: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[CalendarEventStatus] = mapped_column(
-        Enum(CalendarEventStatus, name="calendar_event_status_enum"),
+        Enum(CalendarEventStatus, name="calendar_event_status_enum", values_callable=lambda x: [e.value for e in x]),
         default=CalendarEventStatus.UPCOMING,
         nullable=False,
         index=True,

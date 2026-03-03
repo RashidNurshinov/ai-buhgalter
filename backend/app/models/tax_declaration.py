@@ -23,7 +23,7 @@ class TaxDeclaration(BaseModel):
         index=True,
     )
     declaration_type: Mapped[DeclarationType] = mapped_column(
-        Enum(DeclarationType, name="declaration_type_enum"),
+        Enum(DeclarationType, name="declaration_type_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         index=True,
     )
@@ -35,7 +35,7 @@ class TaxDeclaration(BaseModel):
     xml_path: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     pdf_path: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     status: Mapped[DeclarationStatus] = mapped_column(
-        Enum(DeclarationStatus, name="declaration_status_enum"),
+        Enum(DeclarationStatus, name="declaration_status_enum", values_callable=lambda x: [e.value for e in x]),
         default=DeclarationStatus.DRAFT,
         nullable=False,
         index=True,

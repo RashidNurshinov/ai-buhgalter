@@ -15,7 +15,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import and_, case, extract, func, select
+from sqlalchemy import String, and_, case, cast, extract, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants.enums import (
@@ -32,6 +32,11 @@ from app.schemas.tax_calendar import TaxCalendarEventResponse
 from app.services.tax_calendar_service import TaxCalendarService
 
 logger = logging.getLogger(__name__)
+
+# Use lowercase string values and cast column to String to avoid asyncpg enum name/value bug
+_CONFIRMED_STATUSES = ["confirmed", "classified", "reclassified"]
+_UNCONFIRMED_STATUSES = ["pending", "classified"]
+_UNPROCESSED_DOC_STATUSES = ["uploading", "processing", "recognized"]
 
 
 class DashboardService:
@@ -124,6 +129,9 @@ class DashboardService:
         period_end: date,
     ) -> dict[str, Decimal]:
         """Агрегация доходов и расходов из подтверждённых операций."""
+        # Cast status to String to bypass asyncpg enum adapter (sends NAME instead of VALUE)
+        status_as_str = cast(BankOperation.status, String)
+
         result = await self.db.execute(
             select(
                 func.coalesce(
@@ -149,11 +157,7 @@ class DashboardService:
                     BankOperation.user_id == user_id,
                     BankOperation.operation_date >= period_start,
                     BankOperation.operation_date <= period_end,
-                    BankOperation.status.in_([
-                        OperationStatus.CONFIRMED,
-                        OperationStatus.CLASSIFIED,
-                        OperationStatus.RECLASSIFIED,
-                    ]),
+                    status_as_str.in_(_CONFIRMED_STATUSES),
                 )
             )
         )
@@ -194,6 +198,8 @@ class DashboardService:
         period_end: date,
     ) -> Decimal:
         """Оценка НДС: сумма НДС по подтверждённым операциям за период."""
+        status_as_str = cast(BankOperation.status, String)
+
         result = await self.db.execute(
             select(
                 func.coalesce(
@@ -220,11 +226,7 @@ class DashboardService:
                     BankOperation.operation_date >= period_start,
                     BankOperation.operation_date <= period_end,
                     BankOperation.vat_amount.isnot(None),
-                    BankOperation.status.in_([
-                        OperationStatus.CONFIRMED,
-                        OperationStatus.CLASSIFIED,
-                        OperationStatus.RECLASSIFIED,
-                    ]),
+                    status_as_str.in_(_CONFIRMED_STATUSES),
                 )
             )
         )
@@ -235,14 +237,13 @@ class DashboardService:
 
     async def _count_unconfirmed_operations(self, user_id: str) -> int:
         """Количество операций в статусе PENDING или CLASSIFIED (не подтверждены)."""
+        status_as_str = cast(BankOperation.status, String)
+
         result = await self.db.execute(
             select(func.count(BankOperation.id)).where(
                 and_(
                     BankOperation.user_id == user_id,
-                    BankOperation.status.in_([
-                        OperationStatus.PENDING,
-                        OperationStatus.CLASSIFIED,
-                    ]),
+                    status_as_str.in_(_UNCONFIRMED_STATUSES),
                 )
             )
         )
@@ -250,15 +251,13 @@ class DashboardService:
 
     async def _count_unprocessed_documents(self, user_id: str) -> int:
         """Количество документов в статусе UPLOADING, PROCESSING или RECOGNIZED."""
+        status_as_str = cast(Document.status, String)
+
         result = await self.db.execute(
             select(func.count(Document.id)).where(
                 and_(
                     Document.user_id == user_id,
-                    Document.status.in_([
-                        DocumentStatus.UPLOADING,
-                        DocumentStatus.PROCESSING,
-                        DocumentStatus.RECOGNIZED,
-                    ]),
+                    status_as_str.in_(_UNPROCESSED_DOC_STATUSES),
                 )
             )
         )
@@ -277,6 +276,8 @@ class DashboardService:
         else:
             condition = BankOperation.is_expense == True  # noqa: E712
 
+        status_as_str = cast(BankOperation.status, String)
+
         result = await self.db.execute(
             select(
                 extract("month", BankOperation.operation_date).label("month"),
@@ -289,11 +290,7 @@ class DashboardService:
                     BankOperation.operation_date >= period_start,
                     BankOperation.operation_date <= period_end,
                     condition,
-                    BankOperation.status.in_([
-                        OperationStatus.CONFIRMED,
-                        OperationStatus.CLASSIFIED,
-                        OperationStatus.RECLASSIFIED,
-                    ]),
+                    status_as_str.in_(_CONFIRMED_STATUSES),
                 )
             )
             .group_by(

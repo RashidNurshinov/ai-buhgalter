@@ -16,7 +16,7 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
-from sqlalchemy import and_, func, select, update
+from sqlalchemy import String, and_, cast, func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants.enums import CalendarEventStatus, CalendarEventType
@@ -122,9 +122,10 @@ class TaxCalendarService:
             conditions.append(TaxCalendarEvent.deadline >= date(year, 1, 1))
             conditions.append(TaxCalendarEvent.deadline <= date(year, 12, 31))
         if status:
-            conditions.append(TaxCalendarEvent.status == status)
+            # Cast to String to avoid asyncpg enum name/value mismatch
+            conditions.append(cast(TaxCalendarEvent.status, String) == status.value)
         if event_type:
-            conditions.append(TaxCalendarEvent.event_type == event_type)
+            conditions.append(cast(TaxCalendarEvent.event_type, String) == event_type.value)
         if date_from:
             conditions.append(TaxCalendarEvent.deadline >= date_from)
         if date_to:
@@ -146,12 +147,14 @@ class TaxCalendarService:
         today = date.today()
         end_date = today + timedelta(days=days_ahead)
 
+        status_str = cast(TaxCalendarEvent.status, String)
+
         result = await self.db.execute(
             select(TaxCalendarEvent)
             .where(
                 and_(
                     TaxCalendarEvent.user_id == user_id,
-                    TaxCalendarEvent.status == CalendarEventStatus.UPCOMING,
+                    status_str == "upcoming",
                     TaxCalendarEvent.deadline >= today,
                     TaxCalendarEvent.deadline <= end_date,
                 )
@@ -165,12 +168,14 @@ class TaxCalendarService:
         user_id: str,
     ) -> list[TaxCalendarEvent]:
         """Получить просроченные события."""
+        status_str = cast(TaxCalendarEvent.status, String)
+
         result = await self.db.execute(
             select(TaxCalendarEvent)
             .where(
                 and_(
                     TaxCalendarEvent.user_id == user_id,
-                    TaxCalendarEvent.status == CalendarEventStatus.OVERDUE,
+                    status_str == "overdue",
                 )
             )
             .order_by(TaxCalendarEvent.deadline)
@@ -182,15 +187,17 @@ class TaxCalendarService:
         user_id: str,
     ) -> dict[str, int]:
         """Получить количество событий по статусам."""
+        status_str = cast(TaxCalendarEvent.status, String)
+
         result = await self.db.execute(
             select(
-                TaxCalendarEvent.status,
+                status_str.label("status_val"),
                 func.count(TaxCalendarEvent.id),
             )
             .where(TaxCalendarEvent.user_id == user_id)
-            .group_by(TaxCalendarEvent.status)
+            .group_by(status_str)
         )
-        counts = {row[0].value: row[1] for row in result.all()}
+        counts = {row[0]: row[1] for row in result.all()}
         return {
             "upcoming": counts.get("upcoming", 0),
             "overdue": counts.get("overdue", 0),
@@ -232,7 +239,7 @@ class TaxCalendarService:
     ) -> int:
         """
         Обновить статусы просроченных событий.
-        Вызывается из scheduler (ежедневно) или вручную.
+        Uses raw SQL to avoid asyncpg enum name/value mismatch.
 
         Args:
             user_id: Если указан — только для одного пользователя.
@@ -242,18 +249,30 @@ class TaxCalendarService:
             Количество обновлённых событий.
         """
         today = date.today()
-        conditions = [
-            TaxCalendarEvent.status == CalendarEventStatus.UPCOMING,
-            TaxCalendarEvent.deadline < today,
-        ]
-        if user_id:
-            conditions.append(TaxCalendarEvent.user_id == user_id)
 
-        result = await self.db.execute(
-            update(TaxCalendarEvent)
-            .where(and_(*conditions))
-            .values(status=CalendarEventStatus.OVERDUE)
-        )
+        # Use raw SQL to bypass asyncpg enum adapter sending NAME instead of VALUE
+        if user_id:
+            result = await self.db.execute(
+                text(
+                    "UPDATE tax_calendar_events "
+                    "SET status = 'overdue', updated_at = now() "
+                    "WHERE status = 'upcoming' "
+                    "AND deadline < :today "
+                    "AND user_id = :user_id"
+                ),
+                {"today": today, "user_id": user_id},
+            )
+        else:
+            result = await self.db.execute(
+                text(
+                    "UPDATE tax_calendar_events "
+                    "SET status = 'overdue', updated_at = now() "
+                    "WHERE status = 'upcoming' "
+                    "AND deadline < :today"
+                ),
+                {"today": today},
+            )
+
         count = result.rowcount
         if count > 0:
             logger.info("Updated %d overdue calendar events", count)

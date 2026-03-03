@@ -25,7 +25,7 @@ class Document(BaseModel):
         index=True,
     )
     doc_type: Mapped[DocumentType] = mapped_column(
-        Enum(DocumentType, name="document_type_enum"),
+        Enum(DocumentType, name="document_type_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         index=True,
     )
@@ -49,13 +49,13 @@ class Document(BaseModel):
         Numeric(5, 2), nullable=True
     )
     status: Mapped[DocumentStatus] = mapped_column(
-        Enum(DocumentStatus, name="document_status_enum"),
+        Enum(DocumentStatus, name="document_status_enum", values_callable=lambda x: [e.value for e in x]),
         default=DocumentStatus.UPLOADING,
         nullable=False,
         index=True,
     )
     source: Mapped[DocumentSource] = mapped_column(
-        Enum(DocumentSource, name="document_source_enum"),
+        Enum(DocumentSource, name="document_source_enum", values_callable=lambda x: [e.value for e in x]),
         default=DocumentSource.MANUAL_UPLOAD,
         nullable=False,
     )

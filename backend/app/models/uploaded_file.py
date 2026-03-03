@@ -24,13 +24,13 @@ class UploadedFile(BaseModel):
     original_filename: Mapped[str] = mapped_column(String(500), nullable=False)
     stored_path: Mapped[str] = mapped_column(String(1000), nullable=False)
     file_type: Mapped[FileType | None] = mapped_column(
-        Enum(FileType, name="file_type_enum"),
+        Enum(FileType, name="file_type_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=True,
     )
     file_size: Mapped[int] = mapped_column(BigInteger, nullable=False)
     mime_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
     processing_status: Mapped[ProcessingStatus] = mapped_column(
-        Enum(ProcessingStatus, name="processing_status_enum"),
+        Enum(ProcessingStatus, name="processing_status_enum", values_callable=lambda x: [e.value for e in x]),
         default=ProcessingStatus.QUEUED,
         nullable=False,
         index=True,

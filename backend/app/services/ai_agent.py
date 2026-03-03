@@ -130,7 +130,7 @@ class AIAgentService:
             )
 
             return {
-                "event_id": event.id,
+                "event_id": str(event.id),
                 "summary": result["summary"],
                 "actions": result["actions"],
                 "confirmations": result.get("confirmations", []),
@@ -140,9 +140,14 @@ class AIAgentService:
 
         except Exception as e:
             logger.error("Agent event %s failed: %s", event.id, str(e), exc_info=True)
-            event.status = AgentActionStatus.FAILED
-            event.error_message = str(e)
-            await self.db.commit()
+            # Rollback any aborted transaction before updating status
+            try:
+                await self.db.rollback()
+                event.status = AgentActionStatus.FAILED
+                event.error_message = str(e)[:500]
+                await self.db.commit()
+            except Exception:
+                logger.error("Failed to update event status after error", exc_info=True)
             raise
 
     # ─── THINK + ACT: LLM с tool calling ──────────────────
@@ -186,7 +191,7 @@ class AIAgentService:
             # Если LLM не вызывает tools — это финальный ответ
             if not llm_response.tool_calls:
                 # Логируем финальное рассуждение
-                await self._log_action(
+                await self._log_action_safe(
                     event=event,
                     user_id=user_id,
                     action_type=AgentActionType.AGENT_SUMMARY,
@@ -243,22 +248,35 @@ class AIAgentService:
                                    "Запрос подтверждения создан.",
                     }
                 else:
-                    # Выполняем tool
-                    tool_result = await tool_registry.execute(
-                        tool_name=tool_name,
-                        db=self.db,
-                        user_id=user_id,
-                        _event_id=event.id,
-                        **tool_args,
-                    )
+                    # Выполняем tool с обработкой DB-ошибок
+                    try:
+                        tool_result = await tool_registry.execute(
+                            tool_name=tool_name,
+                            db=self.db,
+                            user_id=user_id,
+                            _event_id=event.id,
+                            **tool_args,
+                        )
+                    except Exception as tool_exc:
+                        # Rollback aborted transaction so we can continue logging
+                        logger.error("Tool %s raised exception: %s", tool_name, tool_exc, exc_info=True)
+                        try:
+                            await self.db.rollback()
+                        except Exception:
+                            pass
+                        tool_result = {
+                            "error": True,
+                            "error_message": str(tool_exc)[:300],
+                            "tool": tool_name,
+                        }
 
                 duration_ms = int((time.monotonic() - start_time) * 1000)
 
                 # Определяем тип действия
                 action_type = self._map_tool_to_action_type(tool_name)
 
-                # Логируем действие
-                action_log = await self._log_action(
+                # Логируем действие (safe — won't crash on DB errors)
+                await self._log_action_safe(
                     event=event,
                     user_id=user_id,
                     action_type=action_type,
@@ -346,7 +364,7 @@ class AIAgentService:
             )
         return build_agent_system_prompt()
 
-    async def _log_action(
+    async def _log_action_safe(
         self,
         event: AgentEvent,
         user_id: str,
@@ -361,26 +379,34 @@ class AIAgentService:
         cost_usd: float = 0.0,
         status: AgentActionStatus = AgentActionStatus.COMPLETED,
         error_message: str | None = None,
-    ) -> AgentActionLog:
-        """Записать действие в лог."""
-        log = AgentActionLog(
-            user_id=user_id,
-            event_id=event.id,
-            action_type=action_type,
-            status=status,
-            step_number=step_number,
-            input_params=input_params,
-            output_result=output_result,
-            agent_reasoning=agent_reasoning,
-            duration_ms=duration_ms,
-            tokens_input=tokens_input,
-            tokens_output=tokens_output,
-            cost_usd=cost_usd,
-            error_message=error_message,
-        )
-        self.db.add(log)
-        await self.db.flush()
-        return log
+    ) -> AgentActionLog | None:
+        """Записать действие в лог. Безопасная версия — не падает при DB-ошибках."""
+        try:
+            log = AgentActionLog(
+                user_id=user_id,
+                event_id=str(event.id),
+                action_type=action_type,
+                status=status,
+                step_number=step_number,
+                input_params=input_params,
+                output_result=output_result,
+                agent_reasoning=agent_reasoning,
+                duration_ms=duration_ms,
+                tokens_input=tokens_input,
+                tokens_output=tokens_output,
+                cost_usd=cost_usd,
+                error_message=error_message,
+            )
+            self.db.add(log)
+            await self.db.flush()
+            return log
+        except Exception as e:
+            logger.error("Failed to log action (step %d): %s", step_number, e)
+            try:
+                await self.db.rollback()
+            except Exception:
+                pass
+            return None
 
     @staticmethod
     def _map_tool_to_action_type(tool_name: str) -> AgentActionType:

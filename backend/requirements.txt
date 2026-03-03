@@ -47,11 +47,9 @@ pdfplumber==0.11.4
 reportlab==4.2.5
 weasyprint==63.1
 
-# === OCR ===
+# === OCR (lightweight - pytesseract only, no torch dependency) ===
 pytesseract==0.3.13
-easyocr==1.7.2
 Pillow==11.1.0
-opencv-python-headless==4.10.0.84
 
 # === Logging ===
 structlog==24.4.0

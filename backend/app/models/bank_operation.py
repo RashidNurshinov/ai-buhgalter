@@ -39,7 +39,7 @@ class BankOperation(BaseModel):
     counterparty_inn: Mapped[str | None] = mapped_column(String(12), nullable=True)
     purpose: Mapped[str | None] = mapped_column(Text, nullable=True)
     category: Mapped[OperationCategory] = mapped_column(
-        Enum(OperationCategory, name="operation_category_enum"),
+        Enum(OperationCategory, name="operation_category_enum", values_callable=lambda x: [e.value for e in x]),
         default=OperationCategory.UNCLASSIFIED,
         nullable=False,
         index=True,
@@ -62,7 +62,7 @@ class BankOperation(BaseModel):
         Numeric(5, 4), nullable=True
     )
     status: Mapped[OperationStatus] = mapped_column(
-        Enum(OperationStatus, name="operation_status_enum"),
+        Enum(OperationStatus, name="operation_status_enum", values_callable=lambda x: [e.value for e in x]),
         default=OperationStatus.PENDING,
         nullable=False,
         index=True,

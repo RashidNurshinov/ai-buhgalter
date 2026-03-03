@@ -32,7 +32,7 @@ class CashReceipt(BaseModel):
     total: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
     vat_amount: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
     payment_type: Mapped[PaymentType] = mapped_column(
-        Enum(PaymentType, name="payment_type_enum"),
+        Enum(PaymentType, name="payment_type_enum", values_callable=lambda x: [e.value for e in x]),
         default=PaymentType.CASH,
         nullable=False,
     )

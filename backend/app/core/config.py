@@ -65,6 +65,32 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./storage/uploads"
     MAX_FILE_SIZE_MB: int = 50
 
+    # === Сбербанк API (Этап 2) ===
+    SBERBANK_API_URL: str = "https://api.sberbank.ru/prod"
+    SBERBANK_CLIENT_ID: str = ""
+    SBERBANK_CLIENT_SECRET: str = ""
+    SBERBANK_SCOPE: str = "/statement /accounts"
+
+    # === Тинькофф API (Этап 2) ===
+    TINKOFF_API_URL: str = "https://business.tinkoff.ru/openapi"
+    TINKOFF_API_TOKEN: str = ""
+
+    # === ОФД API (Этап 2) ===
+    OFD_API_URL: str = ""
+    OFD_API_KEY: str = ""
+
+    # === Сфера / Контур API (Этап 2) ===
+    SFERA_API_URL: str = ""
+    SFERA_API_TOKEN: str = ""
+
+    # === СБИС API (Этап 2) ===
+    SBIS_API_URL: str = ""
+    SBIS_APP_CLIENT_ID: str = ""
+
+    # === МойСклад API (Этап 2) ===
+    MOYSKLAD_API_URL: str = "https://api.moysklad.ru/api/remap/1.2"
+    MOYSKLAD_API_TOKEN: str = ""
+
     # === Свойства ===
     @property
     def is_production(self) -> bool:

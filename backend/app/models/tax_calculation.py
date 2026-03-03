@@ -25,12 +25,12 @@ class TaxCalculation(BaseModel):
         index=True,
     )
     tax_type: Mapped[TaxType] = mapped_column(
-        Enum(TaxType, name="tax_type_enum"),
+        Enum(TaxType, name="tax_type_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         index=True,
     )
     period_type: Mapped[PeriodType] = mapped_column(
-        Enum(PeriodType, name="period_type_enum"),
+        Enum(PeriodType, name="period_type_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
     )
     period_start: Mapped[date] = mapped_column(Date, nullable=False)
@@ -68,7 +68,7 @@ class TaxCalculation(BaseModel):
         Numeric(15, 2), default=Decimal("0.00"), nullable=False
     )
     status: Mapped[CalculationStatus] = mapped_column(
-        Enum(CalculationStatus, name="calculation_status_enum"),
+        Enum(CalculationStatus, name="calculation_status_enum", values_callable=lambda x: [e.value for e in x]),
         default=CalculationStatus.PRELIMINARY,
         nullable=False,
     )
