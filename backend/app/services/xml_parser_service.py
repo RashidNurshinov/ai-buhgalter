@@ -29,6 +29,43 @@ from app.utils.validators import (
 logger = logging.getLogger(__name__)
 
 
+# ─── Определение кодировки XML ────────────────────────────────────────
+
+
+def _detect_encoding(xml_content: bytes) -> str:
+    """
+    Определение кодировки XML файла.
+    
+    Приоритеты:
+    1. encoding из XML declaration (<?xml version="1.0" encoding="..."?>)
+    2. Windows-1251 для русских файлов ФНС
+    3. UTF-8 по умолчанию
+    """
+    # Пробуем найти XML declaration
+    match = re.match(rb'^<\?xml[^>]*encoding=["\']([^"\'>]+)["\']', xml_content[:200])
+    if match:
+        return match.group(1).decode('ascii')
+    
+    # Для файлов ФНС без declaration пробуем Windows-1251
+    # Сигнатура: первые байты 0xD4 0xE0 0xE9 0xEB = "Файл" в Windows-1251
+    if xml_content[:4] == b'\xd4\xe0\xe9\xeb':
+        return 'windows-1251'
+    
+    return 'utf-8'
+
+
+def _decode_xml_content(xml_content: bytes) -> str:
+    """
+    Декодирование XML контента с определением кодировки.
+    """
+    encoding = _detect_encoding(xml_content)
+    try:
+        return xml_content.decode(encoding)
+    except (UnicodeDecodeError, LookupError):
+        # Fallback на UTF-8 с заменой
+        return xml_content.decode('utf-8', errors='replace')
+
+
 # ─── Результаты парсинга (dataclasses) ──────────────────────────
 
 
@@ -362,13 +399,18 @@ def _extract_vat_from_purpose(purpose: str) -> Optional[Decimal]:
 
 
 def _parse_root(xml_content: bytes | str) -> etree._Element:
+    """Парсинг корневого элемента XML с авто-определением кодировки."""
     if isinstance(xml_content, str):
         xml_content = xml_content.encode("utf-8")
     if xml_content.startswith(b"\xef\xbb\xbf"):
         xml_content = xml_content[3:]
+    
+    # Определяем кодировку и декодируем
+    xml_str = _decode_xml_content(xml_content)
+    
     try:
-        parser = etree.XMLParser(recover=True, encoding="utf-8")
-        return etree.fromstring(xml_content, parser=parser)
+        parser = etree.XMLParser(recover=True, encoding='utf-8')
+        return etree.fromstring(xml_str.encode('utf-8'), parser=parser)
     except etree.XMLSyntaxError as e:
         raise ValueError(f"Невалидный XML: {e}")
 

@@ -57,3 +57,13 @@ router.include_router(dashboard_router)
 from app.api.v1.documents import router as documents_router
 
 router.include_router(documents_router)
+
+# === Контрагенты ===
+from app.api.v1.counterparties import router as counterparties_router
+
+router.include_router(counterparties_router)
+
+# === Банковские счета ===
+from app.api.v1.bank_accounts import router as bank_accounts_router
+
+router.include_router(bank_accounts_router)

@@ -1,5 +1,8 @@
 /**
  * API-эндпоинты — функции-обёртки над apiClient.
+ *
+ * ВАЖНО: Все типы и имена полей синхронизированы с backend Pydantic-схемами.
+ * При изменении backend-схем — обновить соответствующие типы в @/types/index.ts
  */
 import apiClient from './client';
 import type {
@@ -10,10 +13,12 @@ import type {
   UserUpdate,
   DashboardResponse,
   CalendarEvent,
+  CalendarListResponse,
   UploadedFile,
   AgentChatRequest,
   AgentChatResponse,
   AgentConfirmation,
+  AgentConfirmRequest,
 } from '@/types';
 
 // ==================== Auth ====================
@@ -53,8 +58,12 @@ export const dashboardApi = {
 // ==================== Calendar ====================
 
 export const calendarApi = {
-  getEvents: (params?: { year?: number; status?: string }) =>
-    apiClient.get<CalendarEvent[]>('/calendar/', { params }),
+  /**
+   * Список событий с фильтрацией.
+   * Backend возвращает CalendarListResponse (events + counts), а НЕ массив.
+   */
+  getEvents: (params?: { year?: number; status?: string; type?: string }) =>
+    apiClient.get<CalendarListResponse>('/calendar/', { params }),
 
   getUpcoming: (days?: number) =>
     apiClient.get<CalendarEvent[]>('/calendar/upcoming', {
@@ -86,6 +95,8 @@ export const filesApi = {
   get: (id: string) => apiClient.get<UploadedFile>(`/files/${id}`),
 
   delete: (id: string) => apiClient.delete(`/files/${id}`),
+
+  reprocess: (id: string) => apiClient.post(`/files/${id}/reprocess`),
 };
 
 // ==================== Documents ====================
@@ -100,8 +111,19 @@ export const documentsApi = {
 
   get: (id: string) => apiClient.get(`/documents/${id}`),
 
+  /**
+   * Подтвердить документ.
+   * Backend: POST /documents/{id}/confirm (НЕ PUT!)
+   */
   confirm: (id: string) =>
-    apiClient.put(`/documents/${id}/confirm`),
+    apiClient.post(`/documents/${id}/confirm`),
+
+  /**
+   * Отклонить документ.
+   * Backend: POST /documents/{id}/reject
+   */
+  reject: (id: string) =>
+    apiClient.post(`/documents/${id}/reject`),
 };
 
 // ==================== Operations ====================
@@ -116,11 +138,15 @@ export const operationsApi = {
 
   get: (id: string) => apiClient.get(`/operations/${id}`),
 
+  /**
+   * Подтвердить операцию.
+   * Backend: POST /operations/{id}/confirm (НЕ PUT!)
+   */
   confirm: (id: string) =>
-    apiClient.put(`/operations/${id}/confirm`),
+    apiClient.post(`/operations/${id}/confirm`),
 
   reclassify: (id: string, category: string) =>
-    apiClient.put(`/operations/${id}/reclassify`, { category }),
+    apiClient.post(`/operations/${id}/reclassify`, { category }),
 
   unconfirmed: () => apiClient.get('/operations/unconfirmed'),
 };
@@ -185,25 +211,61 @@ export const declarationsApi = {
 // ==================== Agent ====================
 
 export const agentApi = {
+  /**
+   * Отправить сообщение в чат с AI-агентом.
+   * Backend: POST /agent/chat → AgentChatResponse
+   */
   chat: (data: AgentChatRequest) =>
     apiClient.post<AgentChatResponse>('/agent/chat', data),
 
-  command: (data: { command: string; params?: Record<string, unknown> }) =>
+  /**
+   * Отправить прямую команду AI-агенту.
+   * Backend: POST /agent/command → AgentChatResponse
+   */
+  command: (data: { command: string }) =>
     apiClient.post<AgentChatResponse>('/agent/command', data),
 
-  confirm: (confirmationId: string, approved: boolean) =>
-    apiClient.post(`/agent/confirm`, {
-      confirmation_id: confirmationId,
-      approved,
-    }),
+  /**
+   * Ответить на запрос подтверждения от агента.
+   * Backend: POST /agent/confirm → AgentChatResponse
+   *
+   * ИСПРАВЛЕНО: Backend ожидает { confirmation_id, action, user_response?, modified_data? }
+   * а НЕ { confirmation_id, approved }.
+   */
+  confirm: (data: AgentConfirmRequest) =>
+    apiClient.post<AgentChatResponse>('/agent/confirm', data),
 
+  /**
+   * Список событий агента.
+   * Backend: GET /agent/events → AgentEventOut[]
+   */
   getEvents: (params?: { limit?: number; offset?: number }) =>
     apiClient.get('/agent/events', { params }),
 
+  /**
+   * История сообщений чата.
+   * Backend: GET /agent/messages → Array<{id, role, content, created_at}>
+   */
+  getMessages: (params?: { limit?: number }) =>
+    apiClient.get('/agent/messages', { params }),
+
+  /**
+   * Детали события с логом действий.
+   * Backend: GET /agent/events/{id} → AgentEventDetailOut
+   */
   getEvent: (id: string) => apiClient.get(`/agent/events/${id}`),
 
+  /**
+   * Список ожидающих подтверждений.
+   * Backend: GET /agent/confirmations → AgentConfirmationOut[]
+   */
   getConfirmations: () =>
     apiClient.get<AgentConfirmation[]>('/agent/confirmations'),
 
-  getStats: () => apiClient.get('/agent/stats'),
+  /**
+   * Статистика AI-агента.
+   * Backend: GET /agent/stats → AgentStatsOut
+   */
+  getStats: (days?: number) =>
+    apiClient.get('/agent/stats', { params: days ? { days } : undefined }),
 };

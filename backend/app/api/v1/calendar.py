@@ -2,6 +2,9 @@
 API эндпоинты налогового календаря.
 Пункт плана: 1.14
 Справочник: СПРАВОЧНИК_СУЩНОСТЕЙ.md → api/v1/calendar.py
+
+ИСПРАВЛЕНО: добавлен commit после update_overdue_statuses в GET-эндпоинтах,
+иначе обновление статуса просроченных событий терялось при закрытии сессии.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -45,8 +48,9 @@ async def get_calendar_events(
     """
     service = TaxCalendarService(db)
 
-    # Обновляем просроченные при каждом запросе
+    # Обновляем просроченные при каждом запросе и коммитим
     await service.update_overdue_statuses(user_id=current_user.id)
+    await db.commit()
 
     events = await service.get_events(
         user_id=current_user.id,
@@ -76,6 +80,7 @@ async def get_upcoming_events(
     """Получить ближайшие предстоящие события на N дней вперёд."""
     service = TaxCalendarService(db)
     await service.update_overdue_statuses(user_id=current_user.id)
+    await db.commit()
     events = await service.get_upcoming(user_id=current_user.id, days_ahead=days)
     return [TaxCalendarEventResponse.model_validate(e) for e in events]
 
@@ -92,6 +97,7 @@ async def get_overdue_events(
     """Получить список просроченных событий."""
     service = TaxCalendarService(db)
     await service.update_overdue_statuses(user_id=current_user.id)
+    await db.commit()
     events = await service.get_overdue(user_id=current_user.id)
     return [TaxCalendarEventResponse.model_validate(e) for e in events]
 

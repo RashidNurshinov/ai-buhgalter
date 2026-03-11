@@ -69,10 +69,12 @@ function docTypeTag(dt: DocumentType) {
 
 function statusTag(status: DocumentStatus) {
   const colorMap: Record<string, string> = {
+    uploading: 'default',
     uploaded: 'blue',
     processing: 'processing',
     recognized: 'green',
     confirmed: 'success',
+    rejected: 'volcano',
     error: 'red',
   };
   return <Tag color={colorMap[status] || 'default'}>{documentStatusLabel(status)}</Tag>;
@@ -461,10 +463,12 @@ export default function DocumentsPage() {
               setPage(1);
             }}
             options={[
+              { value: 'uploading', label: 'Загружается' },
               { value: 'uploaded', label: 'Загружен' },
               { value: 'processing', label: 'Обработка' },
               { value: 'recognized', label: 'Распознан' },
               { value: 'confirmed', label: 'Подтверждён' },
+              { value: 'rejected', label: 'Отклонён' },
               { value: 'error', label: 'Ошибка' },
             ]}
           />

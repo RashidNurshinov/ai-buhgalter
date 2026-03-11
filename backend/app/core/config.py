@@ -46,8 +46,10 @@ class Settings(BaseSettings):
     # === OpenRouter (ИИ) ===
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
-    OPENROUTER_DEFAULT_MODEL: str = "anthropic/claude-sonnet-4-20250514"
-    OPENROUTER_FAST_MODEL: str = "anthropic/claude-haiku-3"
+    # Основная модель: Qwen 2.5 72B — мощная и недорогая (~$0.35/1M input, ~$0.40/1M output)
+    OPENROUTER_DEFAULT_MODEL: str = "qwen/qwen-2.5-72b-instruct"
+    # Быстрая модель для простых задач: Qwen 2.5 Coder 32B
+    OPENROUTER_FAST_MODEL: str = "qwen/qwen-2.5-coder-32b-instruct"
     OPENROUTER_REQUEST_TIMEOUT: int = 120
 
     # === Email (SMTP) ===
@@ -113,3 +115,12 @@ class Settings(BaseSettings):
 
 # Singleton — единственный экземпляр настроек
 settings = Settings()
+
+
+def validate_production_settings() -> None:
+    """Проверка критических настроек при запуске в production."""
+    if settings.is_production:
+        if "change-me" in settings.JWT_SECRET_KEY:
+            raise RuntimeError("JWT_SECRET_KEY must be changed in production!")
+        if "change-me" in settings.APP_SECRET_KEY:
+            raise RuntimeError("APP_SECRET_KEY must be changed in production!")

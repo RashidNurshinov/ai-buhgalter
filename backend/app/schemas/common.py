@@ -25,7 +25,7 @@ class PaginationParams(BaseModel):
 
 class PaginatedResponse(BaseModel, Generic[T]):
     """Обёртка для пагинированного ответа."""
-    items: list[Any]
+    items: list[T]
     total: int
     page: int
     per_page: int

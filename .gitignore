@@ -39,6 +39,7 @@ docker/postgres/data/
 # === Storage ===
 storage/uploads/*
 !storage/uploads/.gitkeep
+test_storage/
 
 # === Logs ===
 *.log
@@ -55,3 +56,16 @@ celerybeat.pid
 
 # === Alembic ===
 # Версии миграций НЕ игнорируем (они важны)
+
+# === Temporary deploy/debug scripts (root level) ===
+deploy_*.py
+check_*.py
+fix_*.py
+poll_*.py
+wait_*.py
+emergency_*.py
+recover_*.py
+read_*.py
+test_full*.py
+server_*.txt
+deploy.sh

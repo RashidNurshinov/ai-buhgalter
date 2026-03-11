@@ -54,8 +54,11 @@ class PurchaseBookService:
         quarter: int,
     ) -> list[PurchaseBookEntry]:
         """Получить записи книги покупок за квартал."""
+        from sqlalchemy.orm import selectinload
+        
         result = await self.db.execute(
             select(PurchaseBookEntry)
+            .options(selectinload(PurchaseBookEntry.counterparty))
             .where(
                 and_(
                     PurchaseBookEntry.user_id == str(user_id),
@@ -182,25 +185,14 @@ class PurchaseBookService:
             doc_with_vat = doc.total_with_vat or (doc_without_vat + doc_vat)
             doc_vat_rate = doc.vat_rate or Decimal("20.00")
 
-            # Данные контрагента
-            cp_name: str | None = None
-            cp_inn: str | None = None
-            cp_kpp: str | None = None
+            # Данные контрагента — только ID, остальные данные берутся через relationship
             cp_id: str | None = doc.counterparty_id
-
-            if doc.counterparty:
-                cp_name = getattr(doc.counterparty, "name", None)
-                cp_inn = getattr(doc.counterparty, "inn", None)
-                cp_kpp = getattr(doc.counterparty, "kpp", None)
 
             entry = PurchaseBookEntry(
                 user_id=user_id_str,
                 entry_number=entry_number,
                 entry_date=doc.doc_date,
                 counterparty_id=cp_id,
-                counterparty_name=cp_name,
-                counterparty_inn=cp_inn,
-                counterparty_kpp=cp_kpp,
                 invoice_number=doc.doc_number,
                 invoice_date=doc.doc_date,
                 total_without_vat=doc_without_vat,

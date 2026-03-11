@@ -5,11 +5,11 @@
 
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Enum, Integer, Numeric, String
+from sqlalchemy import Boolean, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.constants.enums import TaxSystem
-from app.models.base import BaseModel
+from app.models.base import BaseModel, PgEnum
 
 
 class User(BaseModel):
@@ -25,7 +25,7 @@ class User(BaseModel):
     inn: Mapped[str | None] = mapped_column(String(12), nullable=True)
     business_name: Mapped[str | None] = mapped_column(String(500), nullable=True)
     tax_system: Mapped[TaxSystem] = mapped_column(
-        Enum(TaxSystem, name="tax_system_enum", values_callable=lambda x: [e.value for e in x]),
+        PgEnum(TaxSystem, name="tax_system_enum"),
         default=TaxSystem.USN_INCOME_EXPENSE,
         nullable=False,
     )

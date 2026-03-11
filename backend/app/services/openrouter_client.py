@@ -40,32 +40,37 @@ class ModelConfig:
 
 # Распределение моделей по задачам (из ТЗ)
 AI_MODELS = {
+    # Основная логика агента — Qwen 2.5 72B (мощно, недорого)
     "agent_reasoning": ModelConfig(
-        primary="anthropic/claude-sonnet-4-20250514",
-        fallback="google/gemini-2.5-pro-preview",
+        primary="qwen/qwen-2.5-72b-instruct",
+        fallback="qwen/qwen-2.5-coder-32b-instruct",
         temperature=0.1,
         max_tokens=8192,
     ),
+    # Распознавание документов — Qwen 2.5 72B
     "document_recognition": ModelConfig(
-        primary="anthropic/claude-sonnet-4-20250514",
-        fallback="google/gemini-2.5-pro-preview",
+        primary="qwen/qwen-2.5-72b-instruct",
+        fallback="qwen/qwen-2.5-coder-32b-instruct",
         temperature=0.1,
         max_tokens=4096,
     ),
+    # Классификация операций — быстрая модель Qwen 2.5 Coder 32B
     "operation_classification": ModelConfig(
-        primary="anthropic/claude-3.5-haiku",
+        primary="qwen/qwen-2.5-coder-32b-instruct",
         fallback="meta-llama/llama-3.1-70b-instruct",
         temperature=0.0,
         max_tokens=2048,
     ),
+    # Налоговые вопросы — Qwen 2.5 72B
     "tax_questions": ModelConfig(
-        primary="anthropic/claude-sonnet-4-20250514",
-        fallback="anthropic/claude-3.5-sonnet",
+        primary="qwen/qwen-2.5-72b-instruct",
+        fallback="qwen/qwen-2.5-coder-32b-instruct",
         temperature=0.1,
         max_tokens=4096,
     ),
+    # Валидация данных — быстрая модель
     "validation": ModelConfig(
-        primary="anthropic/claude-3.5-haiku",
+        primary="qwen/qwen-2.5-coder-32b-instruct",
         fallback="meta-llama/llama-3.1-70b-instruct",
         temperature=0.0,
         max_tokens=2048,
@@ -333,16 +338,22 @@ class OpenRouterClient:
     @staticmethod
     def _estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
         """Примерная оценка стоимости (USD)."""
-        # Цены за 1M токенов (приблизительные, OpenRouter может отличаться)
+        # Цены за 1M токенов (OpenRouter, актуальные на 2026)
         pricing = {
+            # Qwen модели — основное (очень недорого)
+            "qwen/qwen-2.5-72b-instruct": (0.35, 0.40),
+            "qwen/qwen-2.5-coder-32b-instruct": (0.18, 0.22),
+            # Llama модели — fallback
+            "meta-llama/llama-3.1-70b-instruct": (0.52, 0.75),
+            # Anthropic (для сравнения, если кто-то захочет вернуть)
             "anthropic/claude-sonnet-4-20250514": (3.0, 15.0),
             "anthropic/claude-3.5-sonnet": (3.0, 15.0),
             "anthropic/claude-3.5-haiku": (0.25, 1.25),
             "anthropic/claude-opus-4-20250514": (15.0, 75.0),
+            # Google
             "google/gemini-2.5-pro-preview": (1.25, 10.0),
-            "meta-llama/llama-3.1-70b-instruct": (0.52, 0.75),
         }
-        in_price, out_price = pricing.get(model, (3.0, 15.0))
+        in_price, out_price = pricing.get(model, (0.35, 0.40))
         return (input_tokens * in_price + output_tokens * out_price) / 1_000_000
 
 

@@ -1,17 +1,18 @@
 """
 Модель CashReceipt (кассовый чек).
-Справочник: СПРАВОЧНИК_СУЩНОСТЕЙ.md → таблица cash_receipts
+Справочник: СПРАВОЧНИК_СУЩНОСТЕЙ.md -> таблица cash_receipts
 """
 
+import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, String
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import DateTime, ForeignKey, Numeric, String
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.constants.enums import PaymentType
-from app.models.base import BaseModel
+from app.models.base import BaseModel, PgEnum
 
 
 class CashReceipt(BaseModel):
@@ -19,7 +20,8 @@ class CashReceipt(BaseModel):
 
     __tablename__ = "cash_receipts"
 
-    user_id: Mapped[str] = mapped_column(
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -32,7 +34,7 @@ class CashReceipt(BaseModel):
     total: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
     vat_amount: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
     payment_type: Mapped[PaymentType] = mapped_column(
-        Enum(PaymentType, name="payment_type_enum", values_callable=lambda x: [e.value for e in x]),
+        PgEnum(PaymentType, name="payment_type_enum"),
         default=PaymentType.CASH,
         nullable=False,
     )

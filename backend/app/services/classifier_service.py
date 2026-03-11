@@ -386,7 +386,7 @@ def _matches_any(text: str, keywords: list[str]) -> bool:
 
 
 async def _classify_via_llm(operation: BankOperation) -> ClassificationResult:
-    """Классификация операции через LLM (Claude Haiku)."""
+    """Классификация операции через LLM (Qwen 2.5 Coder 32B)."""
     result = ClassificationResult(source="llm")
 
     direction = "Приход (зачисление)" if operation.is_income else "Расход (списание)"

@@ -3,10 +3,11 @@
 Справочник: СПРАВОЧНИК_СУЩНОСТЕЙ.md → таблица reconciliation_reports
 """
 
+import uuid
 from datetime import date
 
 from sqlalchemy import Date, ForeignKey, Integer, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import BaseModel
@@ -17,7 +18,8 @@ class ReconciliationReport(BaseModel):
 
     __tablename__ = "reconciliation_reports"
 
-    user_id: Mapped[str] = mapped_column(
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,

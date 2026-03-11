@@ -177,15 +177,13 @@ class SalesBookService:
             doc_with_vat = doc.total_with_vat or (doc_without_vat + doc_vat)
             doc_vat_rate = doc.vat_rate or Decimal("20.00")
 
-            # Данные покупателя (из контрагента документа)
+            # Данные покупателя (из контрагента документа) — только name и inn
             buyer_name: str | None = None
             buyer_inn: str | None = None
-            buyer_kpp: str | None = None
 
             if doc.counterparty:
                 buyer_name = getattr(doc.counterparty, "name", None)
                 buyer_inn = getattr(doc.counterparty, "inn", None)
-                buyer_kpp = getattr(doc.counterparty, "kpp", None)
 
             entry = SalesBookEntry(
                 user_id=user_id_str,
@@ -193,7 +191,6 @@ class SalesBookService:
                 entry_date=doc.doc_date,
                 buyer_name=buyer_name,
                 buyer_inn=buyer_inn,
-                buyer_kpp=buyer_kpp,
                 invoice_number=doc.doc_number,
                 invoice_date=doc.doc_date,
                 total_without_vat=doc_without_vat,
@@ -255,7 +252,6 @@ class SalesBookService:
                 else receipt.receipt_date,
                 buyer_name="Розничный покупатель",
                 buyer_inn=None,
-                buyer_kpp=None,
                 invoice_number=receipt.receipt_number or receipt.fiscal_number,
                 invoice_date=receipt.receipt_date.date()
                 if hasattr(receipt.receipt_date, "date")
@@ -266,7 +262,7 @@ class SalesBookService:
                 vat_rate=vat_rate,
                 quarter=quarter,
                 year=year,
-                linked_receipt_id=str(receipt.id),
+                linked_document_id=None,
             )
             self.db.add(entry)
 

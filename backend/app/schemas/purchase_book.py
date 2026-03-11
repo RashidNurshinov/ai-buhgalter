@@ -1,6 +1,9 @@
 """
 Pydantic-схемы для книги покупок.
 Справочник: СПРАВОЧНИК_СУЩНОСТЕЙ.md → schemas/purchase_book.py
+
+ВАЖНО: Схема должна соответствовать модели PurchaseBookEntry (без counterparty_name/inn/kpp).
+Данные контрагента берутся через relationship.counterparty.
 """
 
 import uuid
@@ -17,9 +20,10 @@ class PurchaseBookEntryResponse(BaseModel):
     entry_number: int
     entry_date: date
     counterparty_id: uuid.UUID | None = None
-    counterparty_name: str | None = None
-    counterparty_inn: str | None = None
-    counterparty_kpp: str | None = None
+    # Данные контрагента берутся из relationship
+    counterparty_name: str | None = Field(None, alias="counterparty.name")
+    counterparty_inn: str | None = Field(None, alias="counterparty.inn")
+    counterparty_kpp: str | None = Field(None, alias="counterparty.kpp")
     invoice_number: str | None = None
     invoice_date: date | None = None
     total_without_vat: Decimal

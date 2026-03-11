@@ -1,12 +1,14 @@
 """
 Модель KudirEntry (запись КУДиР).
-Справочник: СПРАВОЧНИК_СУЩНОСТЕЙ.md → таблица kudir_entries
+Справочник: СПРАВОЧНИК_СУЩНОСТЕЙ.md -> таблица kudir_entries
 """
 
+import uuid
 from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import Date, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import BaseModel
@@ -17,7 +19,8 @@ class KudirEntry(BaseModel):
 
     __tablename__ = "kudir_entries"
 
-    user_id: Mapped[str] = mapped_column(
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -34,7 +37,8 @@ class KudirEntry(BaseModel):
     )
     quarter: Mapped[int] = mapped_column(Integer, nullable=False)
     year: Mapped[int] = mapped_column(Integer, nullable=False)
-    linked_operation_id: Mapped[str | None] = mapped_column(
+    linked_operation_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("bank_operations.id", ondelete="SET NULL"),
         nullable=True,
     )

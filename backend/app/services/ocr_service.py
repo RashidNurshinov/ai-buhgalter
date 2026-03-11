@@ -514,7 +514,9 @@ async def recognize_document_with_llm(
     image_media_type: str = "image/jpeg",
 ) -> tuple[dict[str, Any], LLMResponse]:
     """
-    Отправка изображения + OCR-текста в Claude Sonnet для структуризации.
+    Отправка изображения + OCR-текста в LLM для структуризации.
+    
+    Используется Qwen 2.5 72B (vision capabilities) через OpenRouter.
 
     Args:
         image_data: Байты изображения (если есть). Для PDF — None.
@@ -733,7 +735,7 @@ async def process_document_image(
     Полный OCR-пайплайн:
     1. Предобработка изображения
     2. OCR (Tesseract → fallback EasyOCR)
-    3. Отправка в LLM (Claude Sonnet vision)
+    3. Отправка в LLM (Qwen 2.5 72B vision)
     4. Валидация результата
     5. Маппинг в RecognizedDocument
 

@@ -97,7 +97,7 @@ function OperationDrawer(props: {
   const { op, open, onClose, onConfirm, confirmLoading } = props;
   if (!op) return null;
 
-  const canEdit = op.status === 'new' || op.status === 'classified';
+  const canEdit = op.status === ('new' as OperationStatus) || op.status === 'pending' || op.status === 'classified';
 
   return (
     <Drawer
@@ -335,7 +335,7 @@ function OperationsTable(props: {
               }}
             />
           </Tooltip>
-          {(record.status === 'new' || record.status === 'classified') && (
+          {(record.status === ('new' as OperationStatus) || record.status === 'pending' || record.status === 'classified') && (
             <>
               <Tooltip title="Подтвердить">
                 <Button

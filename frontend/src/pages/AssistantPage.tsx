@@ -25,7 +25,12 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { agentApi } from '@/api/endpoints';
 import ReactMarkdown from 'react-markdown';
-import type { AgentChatResponse, AgentConfirmation, AgentAction } from '@/types';
+import type {
+  AgentChatResponse,
+  AgentConfirmation,
+  AgentActionResult,
+  AgentConfirmationResult,
+} from '@/types';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -34,8 +39,8 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  actions?: AgentAction[];
-  confirmations?: AgentConfirmation[];
+  actions?: AgentActionResult[];
+  confirmations?: AgentConfirmationResult[];
 }
 
 const QUICK_COMMANDS = [
@@ -48,16 +53,39 @@ const QUICK_COMMANDS = [
 
 export default function AssistantPage() {
   const queryClient = useQueryClient();
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: 'assistant',
-      content:
-        'Здравствуйте! Я ваш ИИ-бухгалтер. Задайте вопрос о налогах, операциях, документах или воспользуйтесь быстрыми командами ниже.',
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Загрузка истории сообщений
+  const { data: historyData, isLoading: isLoadingHistory } = useQuery({
+    queryKey: ['chat-history'],
+    queryFn: () => agentApi.getMessages({ limit: 50 }),
+    select: (res) => res.data as Array<{ id: string; role: string; content: string; created_at: string }>,
+  });
+
+  // Инициализация сообщений из истории
+  useEffect(() => {
+    if (historyData && historyData.length > 0) {
+      setMessages(
+        historyData.map((msg) => ({
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content,
+          timestamp: new Date(msg.created_at),
+        }))
+      );
+    } else if (!isLoadingHistory) {
+      // Если истории нет, показываем приветственное сообщение
+      setMessages([
+        {
+          role: 'assistant',
+          content:
+            'Здравствуйте! Я ваш ИИ-бухгалтер. Задайте вопрос о налогах, операциях, документах или воспользуйтесь быстрыми командами ниже.',
+          timestamp: new Date(),
+        },
+      ]);
+    }
+  }, [historyData, isLoadingHistory]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -82,14 +110,14 @@ export default function AssistantPage() {
         ...prev,
         {
           role: 'assistant',
-          content: data.response,
+          content: data.message,
           timestamp: new Date(),
-          actions: data.actions_taken,
-          confirmations: data.confirmations_requested,
+          actions: data.actions,
+          confirmations: data.confirmations,
         },
       ]);
       // Refresh confirmations if new ones were created
-      if (data.confirmations_requested?.length) {
+      if (data.confirmations?.length) {
         queryClient.invalidateQueries({ queryKey: ['agent-confirmations'] });
       }
     },
@@ -113,7 +141,11 @@ export default function AssistantPage() {
     }: {
       confirmationId: string;
       approved: boolean;
-    }) => agentApi.confirm(confirmationId, approved),
+    }) =>
+      agentApi.confirm({
+        confirmation_id: confirmationId,
+        action: approved ? 'confirm' : 'reject',
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agent-confirmations'] });
     },
@@ -176,125 +208,131 @@ export default function AssistantPage() {
               padding: 16,
             }}
           >
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: 'flex',
-                  gap: 8,
-                  marginBottom: 16,
-                  flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
-                }}
-              >
+            {isLoadingHistory ? (
+              <div style={{ textAlign: 'center', padding: 40 }}>
+                <Spin size="large" tip="Загрузка истории чата..." />
+              </div>
+            ) : (
+              messages.map((msg, idx) => (
                 <div
+                  key={idx}
                   style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: '50%',
-                    background:
-                      msg.role === 'user' ? '#1677ff' : '#f0f0f0',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
+                    gap: 8,
+                    marginBottom: 16,
+                    flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
                   }}
                 >
-                  {msg.role === 'user' ? (
-                    <UserOutlined style={{ color: '#fff' }} />
-                  ) : (
-                    <RobotOutlined style={{ color: '#1677ff' }} />
-                  )}
-                </div>
-                <div
-                  style={{
-                    maxWidth: '75%',
-                    padding: '10px 14px',
-                    borderRadius: 12,
-                    background:
-                      msg.role === 'user' ? '#1677ff' : '#f5f5f5',
-                    color: msg.role === 'user' ? '#fff' : 'inherit',
-                  }}
-                >
-                  {msg.role === 'assistant' ? (
-                    <div className="markdown-content">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
-                  )}
-                  {/* Show actions taken */}
-                  {msg.actions && msg.actions.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                      <Divider style={{ margin: '8px 0' }} />
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        Выполненные действия:
-                      </Text>
-                      {msg.actions.map((action, ai) => (
-                        <div
-                          key={ai}
-                          style={{
-                            marginTop: 4,
-                            padding: 8,
-                            background: 'rgba(0,0,0,0.04)',
-                            borderRadius: 6,
-                          }}
-                        >
-                          <Space size="small">
-                            <Tag color="blue">{action.action_type}</Tag>
-                            {action.tool_name && (
-                              <Text style={{ fontSize: 12 }}>
-                                {action.tool_name}
-                              </Text>
-                            )}
-                            <Tag
-                              color={action.status === 'completed' ? 'green' : 'orange'}
-                              style={{ fontSize: 10 }}
-                            >
-                              {action.status}
-                            </Tag>
-                          </Space>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {/* Show confirmations requested */}
-                  {msg.confirmations && msg.confirmations.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                      <Divider style={{ margin: '8px 0' }} />
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        ❓ Требуется подтверждение:
-                      </Text>
-                      {msg.confirmations.map((conf, ci) => (
-                        <div
-                          key={ci}
-                          style={{
-                            marginTop: 4,
-                            padding: 8,
-                            background: 'rgba(250,173,20,0.1)',
-                            borderRadius: 6,
-                          }}
-                        >
-                          <Text style={{ fontSize: 12 }}>{conf.question}</Text>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                   <div
                     style={{
-                      fontSize: 10,
-                      opacity: 0.6,
-                      marginTop: 4,
-                      textAlign: msg.role === 'user' ? 'right' : 'left',
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      background:
+                        msg.role === 'user' ? '#1677ff' : '#f0f0f0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
                     }}
                   >
-                    {msg.timestamp.toLocaleTimeString('ru-RU', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    {msg.role === 'user' ? (
+                      <UserOutlined style={{ color: '#fff' }} />
+                    ) : (
+                      <RobotOutlined style={{ color: '#1677ff' }} />
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      maxWidth: '75%',
+                      padding: '10px 14px',
+                      borderRadius: 12,
+                      background:
+                        msg.role === 'user' ? '#1677ff' : '#f5f5f5',
+                      color: msg.role === 'user' ? '#fff' : 'inherit',
+                    }}
+                  >
+                    {msg.role === 'assistant' ? (
+                      <div className="markdown-content">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+                    )}
+                    {/* Show actions taken */}
+                    {msg.actions && msg.actions.length > 0 && (
+                      <div style={{ marginTop: 8 }}>
+                        <Divider style={{ margin: '8px 0' }} />
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          Выполненные действия:
+                        </Text>
+                        {msg.actions.map((action, ai) => (
+                          <div
+                            key={ai}
+                            style={{
+                              marginTop: 4,
+                              padding: 8,
+                              background: 'rgba(0,0,0,0.04)',
+                              borderRadius: 6,
+                            }}
+                          >
+                            <Space size="small">
+                              <Tag color="blue">{action.tool}</Tag>
+                              {action.duration_ms != null && (
+                                <Text style={{ fontSize: 12 }}>
+                                  {action.duration_ms}ms
+                                </Text>
+                              )}
+                              <Tag
+                                color={action.result?.error ? 'red' : 'green'}
+                                style={{ fontSize: 10 }}
+                              >
+                                {action.result?.error ? 'error' : 'ok'}
+                              </Tag>
+                            </Space>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* Show confirmations requested */}
+                    {msg.confirmations && msg.confirmations.length > 0 && (
+                      <div style={{ marginTop: 8 }}>
+                        <Divider style={{ margin: '8px 0' }} />
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          ❓ Требуется подтверждение:
+                        </Text>
+                        {msg.confirmations.map((conf, ci) => (
+                          <div
+                            key={ci}
+                            style={{
+                              marginTop: 4,
+                              padding: 8,
+                              background: 'rgba(250,173,20,0.1)',
+                              borderRadius: 6,
+                            }}
+                          >
+                            <Text style={{ fontSize: 12 }}>{conf.message}</Text>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        fontSize: 10,
+                        opacity: 0.6,
+                        marginTop: 4,
+                        textAlign: msg.role === 'user' ? 'right' : 'left',
+                      }}
+                    >
+                      {msg.timestamp.toLocaleTimeString('ru-RU', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
             {chatMutation.isPending && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
                 <div

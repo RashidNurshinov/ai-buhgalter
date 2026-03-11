@@ -339,8 +339,9 @@ async def tool_recognize_document(
     if not uploaded_file:
         return {"error": True, "error_message": f"Файл {file_id} не найден"}
 
-    # Читаем файл с диска
-    file_path = uploaded_file.stored_path
+    # Читаем файл с диска — добавляем upload_path к stored_path
+    from app.core.config import settings
+    file_path = settings.upload_path / uploaded_file.stored_path
     if not os.path.exists(file_path):
         return {"error": True, "error_message": f"Файл не найден на диске: {file_path}"}
 
@@ -426,7 +427,9 @@ async def tool_parse_xml_document(
     if not uploaded_file:
         return {"error": True, "error_message": f"Файл {file_id} не найден"}
 
-    file_path = uploaded_file.stored_path
+    # Читаем файл с диска — добавляем upload_path к stored_path
+    from app.core.config import settings
+    file_path = settings.upload_path / uploaded_file.stored_path
     if not os.path.exists(file_path):
         return {"error": True, "error_message": f"Файл не найден на диске: {file_path}"}
 
@@ -508,6 +511,7 @@ async def tool_parse_table_file(
 ) -> dict[str, Any]:
     """Парсинг CSV/Excel через csv_parser_service."""
     import os
+    import re as _re
     from app.models.uploaded_file import UploadedFile
     from app.constants.enums import FileType
     from app.services.csv_parser_service import (
@@ -521,17 +525,44 @@ async def tool_parse_table_file(
     if not file_id:
         return {"error": True, "error_message": "file_id не указан"}
 
-    result = await db.execute(
-        select(UploadedFile).where(
-            UploadedFile.id == file_id,
-            UploadedFile.user_id == user_id,
-        )
+    # Валидация UUID — если LLM передала не UUID, ищем последний файл
+    uuid_pattern = _re.compile(
+        r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', _re.IGNORECASE
     )
-    uploaded_file = result.scalar_one_or_none()
+    if not uuid_pattern.match(str(file_id)):
+        logger.warning("parse_table_file: invalid file_id '%s', searching for latest file", file_id)
+        from sqlalchemy import desc
+        result = await db.execute(
+            select(UploadedFile).where(
+                UploadedFile.user_id == user_id,
+                UploadedFile.file_type.in_(["csv", "xls", "xlsx"]),
+            ).order_by(desc(UploadedFile.created_at)).limit(1)
+        )
+        uploaded_file = result.scalar_one_or_none()
+        if not uploaded_file:
+            return {
+                "error": True,
+                "error_message": (
+                    f"Некорректный ID файла: '{file_id}'. "
+                    "Используй get_uploaded_files чтобы получить список файлов с их ID."
+                ),
+            }
+        logger.info("parse_table_file: auto-resolved to file %s (%s)", uploaded_file.id, uploaded_file.original_filename)
+    else:
+        result = await db.execute(
+            select(UploadedFile).where(
+                UploadedFile.id == file_id,
+                UploadedFile.user_id == user_id,
+            )
+        )
+        uploaded_file = result.scalar_one_or_none()
+
     if not uploaded_file:
         return {"error": True, "error_message": f"Файл {file_id} не найден"}
 
-    file_path = uploaded_file.stored_path
+    # Читаем файл с диска — добавляем upload_path к stored_path
+    from app.core.config import settings
+    file_path = settings.upload_path / uploaded_file.stored_path
     if not os.path.exists(file_path):
         return {"error": True, "error_message": f"Файл не найден на диске: {file_path}"}
 

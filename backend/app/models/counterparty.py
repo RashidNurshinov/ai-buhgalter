@@ -1,10 +1,12 @@
 """
 Модель Counterparty (контрагент).
-Справочник: СПРАВОЧНИК_СУЩНОСТЕЙ.md → таблица counterparties
+Справочник: СПРАВОЧНИК_СУЩНОСТЕЙ.md -> таблица counterparties
 """
 
+import uuid
+
 from sqlalchemy import Boolean, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
@@ -15,7 +17,8 @@ class Counterparty(BaseModel):
 
     __tablename__ = "counterparties"
 
-    user_id: Mapped[str] = mapped_column(
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,

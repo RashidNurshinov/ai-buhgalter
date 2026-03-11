@@ -114,9 +114,9 @@ class ParsedInventoryReport:
 # Ключ: каноническое имя поля, значение: список вариантов названий колонок
 BANK_COLUMN_MAPPINGS: dict[str, list[str]] = {
     "operation_date": [
-        "дата", "дата операции", "дата проводки", "дата документа",
-        "дата платежа", "date", "operation_date", "дата опер",
-        "дата списания/зачисления", "дата совершения операции",
+        "дата", "дата операции", "дата проводки", "дата проведения",
+        "дата документа", "дата платежа", "date", "operation_date",
+        "дата опер", "дата списания/зачисления", "дата совершения операции",
     ],
     "amount": [
         "сумма", "сумма операции", "сумма платежа", "amount",
@@ -157,6 +157,10 @@ BANK_COLUMN_MAPPINGS: dict[str, list[str]] = {
     ],
     "counterparty_bik": [
         "бик контрагента", "бик получателя", "бик плательщика", "бик",
+    ],
+    "operation_type": [
+        "тип операции", "тип", "вид операции", "дебет/кредит",
+        "operation_type", "направление",
     ],
 }
 
@@ -309,8 +313,10 @@ def _dec(value, default: Decimal = Decimal("0")) -> Decimal:
         elif "," in s:
             # "1234,56" → "1234.56"
             s = s.replace(",", ".")
-        # Убираем валютный знак
-        s = re.sub(r"[₽$€руб\.RUB]", "", s, flags=re.IGNORECASE).strip()
+        # Убираем валютный знак (руб., ₽, $, €, RUB)
+        s = re.sub(r"руб\.?", "", s, flags=re.IGNORECASE)
+        s = re.sub(r"[₽$€]", "", s)
+        s = re.sub(r"\bRUB\b", "", s, flags=re.IGNORECASE).strip()
         if not s or s == "-":
             return default
         return Decimal(s).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -484,26 +490,107 @@ def _read_excel_to_dataframe(
 
     # Очистка
     df = df.dropna(how="all")
-    df = df.loc[:, ~df.columns.str.startswith("Unnamed")]
     df.columns = [str(c).strip() for c in df.columns]
 
-    # Эвристика: если заголовок не в первой строке, ищем его
-    # Проверяем, есть ли в первой строке данных числа — если нет, это заголовок
+    # Убираем Unnamed колонки, но только полностью пустые
+    unnamed_cols = [c for c in df.columns if c.startswith("Unnamed")]
+    if unnamed_cols:
+        # Проверяем, есть ли данные в Unnamed колонках
+        for col in unnamed_cols:
+            if df[col].astype(str).str.strip().replace("", pd.NA).dropna().empty:
+                df = df.drop(columns=[col])
+
+    # Эвристика: ищем строку-заголовок в первых 20 строках
+    # Банковские выписки часто имеют метаданные перед заголовком
     if len(df) > 0 and skip_rows == 0:
-        first_row = df.iloc[0]
-        # Если все значения первой строки — текст и похожи на заголовки
-        potential_headers = [str(v).strip().lower() for v in first_row if str(v).strip()]
         all_bank_variants = []
         for variants in BANK_COLUMN_MAPPINGS.values():
-            all_bank_variants.extend([v.lower() for v in variants])
+            all_bank_variants.extend([v.lower().replace("ё", "е") for v in variants])
 
-        matches = sum(1 for h in potential_headers if any(v in h or h in v for v in all_bank_variants))
-        if matches >= 2:
-            # Первая строка данных — на самом деле заголовок
-            df.columns = [str(v).strip() for v in first_row]
-            df = df.iloc[1:].reset_index(drop=True)
+        # Сначала проверяем текущие колонки DataFrame
+        current_cols_norm = [str(c).strip().lower().replace("ё", "е") for c in df.columns]
+        current_matches = sum(
+            1 for h in current_cols_norm
+            if any(v in h or h in v for v in all_bank_variants)
+        )
+
+        if current_matches < 2:
+            # Колонки не похожи на заголовки — ищем заголовок в данных
+            best_row_idx = -1
+            best_matches = 0
+
+            for i in range(min(20, len(df))):
+                row_values = [
+                    str(v).strip().lower().replace("ё", "е")
+                    for v in df.iloc[i]
+                    if str(v).strip()
+                ]
+                matches = sum(
+                    1 for h in row_values
+                    if any(v in h or h in v for v in all_bank_variants)
+                )
+                if matches > best_matches:
+                    best_matches = matches
+                    best_row_idx = i
+
+            if best_matches >= 2 and best_row_idx >= 0:
+                # Извлекаем метаданные из строк до заголовка
+                _extract_metadata_from_header_rows(df, best_row_idx)
+                # Устанавливаем найденную строку как заголовок
+                new_headers = [str(v).strip() for v in df.iloc[best_row_idx]]
+                df = df.iloc[best_row_idx + 1:].reset_index(drop=True)
+                df.columns = new_headers[:len(df.columns)]
+                # Убираем пустые строки после переназначения
+                df = df.dropna(how="all")
+                # Убираем Unnamed колонки
+                df = df.loc[:, ~df.columns.str.startswith("Unnamed")]
+                df = df.loc[:, df.columns.str.strip() != ""]
+        else:
+            # Текущие колонки уже похожи на заголовки — проверяем первую строку
+            first_row = df.iloc[0]
+            potential_headers = [
+                str(v).strip().lower().replace("ё", "е")
+                for v in first_row if str(v).strip()
+            ]
+            row_matches = sum(
+                1 for h in potential_headers
+                if any(v in h or h in v for v in all_bank_variants)
+            )
+            if row_matches > current_matches:
+                df.columns = [str(v).strip() for v in first_row]
+                df = df.iloc[1:].reset_index(drop=True)
 
     return df
+
+
+def _extract_metadata_from_header_rows(df: pd.DataFrame, header_row_idx: int) -> dict:
+    """
+    Извлечение метаданных из строк перед заголовком (номер счёта, ИНН, остатки).
+    Возвращает словарь с метаданными (пока для логирования).
+    """
+    metadata = {}
+    for i in range(header_row_idx):
+        row_values = [str(v).strip() for v in df.iloc[i] if str(v).strip()]
+        if len(row_values) >= 2:
+            key = row_values[0].lower().replace("ё", "е")
+            val = row_values[1]
+            if "номер счета" in key or "номер счёта" in key or "выписка по счету" in key or "выписка по счёту" in key:
+                # Извлекаем номер счёта (20 цифр)
+                account_match = re.search(r"\d{20}", val)
+                if account_match:
+                    metadata["account_number"] = account_match.group()
+            elif "инн" in key:
+                metadata["inn"] = val
+            elif "входящий остаток" in key:
+                metadata["opening_balance"] = val
+            elif "исходящий остаток" in key:
+                metadata["closing_balance"] = val
+            elif "клиент" in key:
+                metadata["client_name"] = val
+
+    if metadata:
+        logger.info(f"Извлечены метаданные выписки: {metadata}")
+    return metadata
 
 
 # ─── Публичные функции парсинга ──────────────────────────────────
@@ -661,11 +748,17 @@ def _parse_bank_dataframe(
     """
     col_map = _auto_map_columns(list(df.columns), BANK_COLUMN_MAPPINGS)
 
+    logger.info(
+        f"Маппинг колонок банковской выписки: {col_map} "
+        f"(всего колонок: {list(df.columns)}, строк: {len(df)})"
+    )
+
     # Проверяем наличие обязательных колонок
     date_col = col_map["operation_date"]
     amount_col = col_map["amount"]
     debit_col = col_map["debit"]
     credit_col = col_map["credit"]
+    op_type_col = col_map.get("operation_type")
 
     if date_col is None:
         result.errors.append(
@@ -677,6 +770,7 @@ def _parse_bank_dataframe(
     # Должна быть либо колонка суммы, либо пара дебет/кредит
     has_amount = amount_col is not None
     has_debit_credit = debit_col is not None or credit_col is not None
+    has_op_type = op_type_col is not None
 
     if not has_amount and not has_debit_credit:
         result.errors.append(
@@ -689,11 +783,6 @@ def _parse_bank_dataframe(
     cp_name_col = col_map["counterparty_name"]
     cp_inn_col = col_map["counterparty_inn"]
     doc_number_col = col_map["doc_number"]
-
-    logger.info(
-        f"Маппинг колонок банковской выписки: {col_map} "
-        f"(всего строк: {len(df)})"
-    )
 
     for idx, row in df.iterrows():
         op = ParsedBankOperation()
@@ -720,13 +809,29 @@ def _parse_bank_dataframe(
             raw_amount = _dec(row.get(amount_col))
             if raw_amount == 0:
                 continue
-            # Отрицательная сумма = расход, положительная = приход
-            if raw_amount < 0:
+
+            if has_op_type:
+                # Направление определяется колонкой "Тип операции"
+                op_type_val = str(row.get(op_type_col, "")).strip().lower()
                 op.amount = abs(raw_amount)
-                op.is_expense = True
+                if any(w in op_type_val for w in ["дебет", "debit", "списание", "расход"]):
+                    op.is_expense = True
+                elif any(w in op_type_val for w in ["кредит", "credit", "зачисление", "приход"]):
+                    op.is_income = True
+                else:
+                    # Fallback: по знаку суммы
+                    if raw_amount < 0:
+                        op.is_expense = True
+                    else:
+                        op.is_income = True
             else:
-                op.amount = raw_amount
-                op.is_income = True
+                # Отрицательная сумма = расход, положительная = приход
+                if raw_amount < 0:
+                    op.amount = abs(raw_amount)
+                    op.is_expense = True
+                else:
+                    op.amount = raw_amount
+                    op.is_income = True
 
         # Контрагент
         if cp_name_col:

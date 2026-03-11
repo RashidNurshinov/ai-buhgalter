@@ -36,8 +36,8 @@ async def list_documents(
     doc_type: DocumentType | None = Query(None, description="Фильтр по типу"),
     status_filter: DocumentStatus | None = Query(None, alias="status", description="Фильтр по статусу"),
     year: int | None = Query(None, ge=2020, le=2030),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=100),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -52,14 +52,16 @@ async def list_documents(
         query = query.where(func.extract("year", Document.doc_date) == year)
 
     # Total count
-    count_query = select(func.count()).select_from(query.subquery())
-    total_result = await db.execute(count_query)
+    total_result = await db.execute(select(func.count()).select_from(query.subquery()))
     total = total_result.scalar() or 0
+
+    # Calculate pages
+    pages = (total + per_page - 1) // per_page if total > 0 else 0
 
     # Fetch with pagination
     query = query.options(selectinload(Document.items))
     query = query.order_by(desc(Document.created_at))
-    query = query.offset(skip).limit(limit)
+    query = query.offset((page - 1) * per_page).limit(per_page)
 
     result = await db.execute(query)
     documents = list(result.scalars().all())
@@ -67,8 +69,9 @@ async def list_documents(
     return PaginatedResponse(
         items=[DocumentResponse.model_validate(d) for d in documents],
         total=total,
-        skip=skip,
-        limit=limit,
+        page=page,
+        per_page=per_page,
+        pages=pages,
     )
 
 

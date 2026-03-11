@@ -54,7 +54,7 @@ class AuthService:
             tax_system=tax_system,
         )
         self.db.add(user)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(user)
 
         # Генерируем токены для автоматического входа после регистрации

@@ -21,7 +21,6 @@ from app.services.ocr_service import (
     RecognizedItem,
     _deskew,
     _detect_image_media_type,
-    _make_json_serializable,
     _map_llm_to_recognized_document,
     _parse_date_str,
     _parse_llm_json_response,

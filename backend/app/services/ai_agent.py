@@ -342,7 +342,7 @@ class AIAgentService:
             payload=payload,
         )
         self.db.add(event)
-        await self.db.flush()
+        await self.db.commit()
         return event
 
     async def _get_user(self, user_id: str) -> User | None:
@@ -382,14 +382,37 @@ class AIAgentService:
     ) -> AgentActionLog | None:
         """Записать действие в лог. Безопасная версия — не падает при DB-ошибках."""
         try:
+            # Сериализуем UUID и другие не-JSON-сериализуемые объекты в строки
+            def serialize_for_jsonb(obj: Any) -> Any:
+                """Рекурсивно конвертирует UUID и другие не-JSON объекты в строки."""
+                import uuid
+                if isinstance(obj, uuid.UUID):
+                    return str(obj)
+                elif isinstance(obj, dict):
+                    return {k: serialize_for_jsonb(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [serialize_for_jsonb(item) for item in obj]
+                elif isinstance(obj, (datetime, date)):
+                    return obj.isoformat()
+                elif isinstance(obj, Decimal):
+                    return str(obj)
+                else:
+                    return obj
+            
+            from datetime import date, datetime
+            from decimal import Decimal
+            
+            input_params_serialized = serialize_for_jsonb(input_params) if input_params else None
+            output_result_serialized = serialize_for_jsonb(output_result) if output_result else None
+            
             log = AgentActionLog(
                 user_id=user_id,
                 event_id=str(event.id),
                 action_type=action_type,
                 status=status,
                 step_number=step_number,
-                input_params=input_params,
-                output_result=output_result,
+                input_params=input_params_serialized,
+                output_result=output_result_serialized,
                 agent_reasoning=agent_reasoning,
                 duration_ms=duration_ms,
                 tokens_input=tokens_input,

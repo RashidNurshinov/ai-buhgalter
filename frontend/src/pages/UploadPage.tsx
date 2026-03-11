@@ -18,6 +18,7 @@ import {
   InboxOutlined,
   DeleteOutlined,
   ReloadOutlined,
+  PlayCircleOutlined,
   FileTextOutlined,
   FilePdfOutlined,
   FileExcelOutlined,
@@ -48,6 +49,7 @@ function statusTag(status: string) {
     queued: { color: 'blue', label: 'В очереди' },
     processing: { color: 'processing', label: 'Обработка…' },
     recognized: { color: 'green', label: 'Распознан' },
+    completed: { color: 'green', label: 'Обработан' },
     done: { color: 'green', label: 'Готов' },
     error: { color: 'red', label: 'Ошибка' },
   };
@@ -109,11 +111,22 @@ export default function UploadPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => filesApi.delete(id),
     onSuccess: () => {
-      message.success('Файл удалён');
+      message.success('Файл удален');
       queryClient.invalidateQueries({ queryKey: ['files'] });
     },
     onError: () => {
       message.error('Не удалось удалить файл');
+    },
+  });
+
+  const reprocessMutation = useMutation({
+    mutationFn: (id: string) => filesApi.reprocess(id),
+    onSuccess: () => {
+      message.success('Файл отправлен на обработку');
+      queryClient.invalidateQueries({ queryKey: ['files'] });
+    },
+    onError: () => {
+      message.error('Не удалось запустить обработку');
     },
   });
 
@@ -168,22 +181,32 @@ export default function UploadPage() {
     {
       title: '',
       key: 'actions',
-      width: 60,
+      width: 100,
       render: (_: unknown, record: UploadedFile) => (
-        <Popconfirm
-          title="Удалить файл?"
-          onConfirm={() => deleteMutation.mutate(record.id)}
-          okText="Да"
-          cancelText="Нет"
-        >
+        <Space size={4}>
           <Button
             type="text"
-            danger
-            icon={<DeleteOutlined />}
+            icon={<PlayCircleOutlined />}
             size="small"
-            loading={deleteMutation.isPending}
+            title="Обработать"
+            loading={reprocessMutation.isPending}
+            onClick={() => reprocessMutation.mutate(record.id)}
           />
-        </Popconfirm>
+          <Popconfirm
+            title="Удалить файл?"
+            onConfirm={() => deleteMutation.mutate(record.id)}
+            okText="Да"
+            cancelText="Нет"
+          >
+            <Button
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+              size="small"
+              loading={deleteMutation.isPending}
+            />
+          </Popconfirm>
+        </Space>
       ),
     },
   ];

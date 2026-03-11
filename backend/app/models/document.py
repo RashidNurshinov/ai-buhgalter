@@ -1,17 +1,18 @@
 """
 Модели Document и DocumentItem.
-Справочник: СПРАВОЧНИК_СУЩНОСТЕЙ.md → таблицы documents, document_items
+Справочник: СПРАВОЧНИК_СУЩНОСТЕЙ.md -> таблицы documents, document_items
 """
 
+import uuid
 from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import Date, Enum, ForeignKey, Integer, Numeric, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Date, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.constants.enums import DocumentSource, DocumentStatus, DocumentType
-from app.models.base import BaseModel
+from app.models.base import BaseModel, PgEnum
 
 
 class Document(BaseModel):
@@ -19,19 +20,21 @@ class Document(BaseModel):
 
     __tablename__ = "documents"
 
-    user_id: Mapped[str] = mapped_column(
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
     doc_type: Mapped[DocumentType] = mapped_column(
-        Enum(DocumentType, name="document_type_enum", values_callable=lambda x: [e.value for e in x]),
+        PgEnum(DocumentType, name="document_type_enum"),
         nullable=False,
         index=True,
     )
     doc_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
     doc_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
-    counterparty_id: Mapped[str | None] = mapped_column(
+    counterparty_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("counterparties.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
@@ -49,13 +52,13 @@ class Document(BaseModel):
         Numeric(5, 2), nullable=True
     )
     status: Mapped[DocumentStatus] = mapped_column(
-        Enum(DocumentStatus, name="document_status_enum", values_callable=lambda x: [e.value for e in x]),
+        PgEnum(DocumentStatus, name="document_status_enum"),
         default=DocumentStatus.UPLOADING,
         nullable=False,
         index=True,
     )
     source: Mapped[DocumentSource] = mapped_column(
-        Enum(DocumentSource, name="document_source_enum", values_callable=lambda x: [e.value for e in x]),
+        PgEnum(DocumentSource, name="document_source_enum"),
         default=DocumentSource.MANUAL_UPLOAD,
         nullable=False,
     )
@@ -84,7 +87,8 @@ class DocumentItem(BaseModel):
 
     __tablename__ = "document_items"
 
-    document_id: Mapped[str] = mapped_column(
+    document_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("documents.id", ondelete="CASCADE"),
         nullable=False,
         index=True,

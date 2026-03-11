@@ -76,7 +76,19 @@ async def agent_chat(
     - Проверить статус данных
     - Сформировать отчёт
     """
+    from app.models.ai_chat_message import AiChatMessage
+    from sqlalchemy import text
+    
     try:
+        # Сохраняем сообщение пользователя
+        user_msg = AiChatMessage(
+            user_id=current_user.id,
+            role="user",
+            content=body.message,
+        )
+        db.add(user_msg)
+        await db.flush()
+        
         result = await trigger_agent_event(
             db=db,
             user_id=current_user.id,
@@ -84,6 +96,23 @@ async def agent_chat(
             payload={"question": body.message},
             priority=5,
         )
+
+        # Сохраняем ответ агента
+        assistant_msg = AiChatMessage(
+            user_id=current_user.id,
+            role="assistant",
+            content=result["summary"],
+            context_json={
+                "event_id": result["event_id"],
+                "tokens_used": result.get("tokens_used", 0),
+                "cost_usd": result.get("cost_usd", 0.0),
+                "actions_count": len(result.get("actions", [])),
+            },
+            model_used="gemini-2.5-pro",
+            tokens_used=result.get("tokens_used", 0),
+        )
+        db.add(assistant_msg)
+        await db.commit()
 
         return AgentChatResponse(
             event_id=result["event_id"],
@@ -96,6 +125,10 @@ async def agent_chat(
 
     except Exception as e:
         logger.error("Agent chat failed: %s", str(e), exc_info=True)
+        try:
+            await db.rollback()
+        except Exception:
+            pass
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка AI-агента: {str(e)}",
@@ -261,6 +294,43 @@ async def get_agent_events(
     )
     events = result.scalars().all()
     return [AgentEventOut.model_validate(e) for e in events]
+
+
+# ═══════════════════════════════════════════════════════════
+# GET /agent/messages — История сообщений чата
+# ═══════════════════════════════════════════════════════════
+
+@router.get(
+    "/messages",
+    response_model=list[dict],
+    summary="История сообщений чата",
+    description="Получить историю переписки с AI-бухгалтером.",
+)
+async def get_chat_messages(
+    limit: int = Query(50, ge=1, le=200, description="Количество сообщений"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """История сообщений чата (последние первые)."""
+    from app.models.ai_chat_message import AiChatMessage
+    
+    result = await db.execute(
+        select(AiChatMessage)
+        .where(AiChatMessage.user_id == current_user.id)
+        .order_by(AiChatMessage.created_at.desc())
+        .limit(limit)
+    )
+    messages = result.scalars().all()
+    # Возвращаем в прямом порядке (старые сначала)
+    return [
+        {
+            "id": str(m.id),
+            "role": m.role,
+            "content": m.content,
+            "created_at": m.created_at.isoformat(),
+        }
+        for m in reversed(messages)
+    ]
 
 
 # ═══════════════════════════════════════════════════════════

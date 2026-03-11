@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.config import settings
+from app.core.config import settings, validate_production_settings
 from app.core.middleware import RequestLoggingMiddleware, ErrorHandlerMiddleware
 from app.core.redis import close_redis
 
@@ -17,6 +17,7 @@ async def lifespan(app: FastAPI):
     """Жизненный цикл приложения: startup / shutdown."""
     # === Startup ===
     from app.core.logging import setup_logging
+    validate_production_settings()
     setup_logging(
         log_level="DEBUG" if settings.is_development else "INFO",
         json_output=settings.is_production,
@@ -33,9 +34,9 @@ app = FastAPI(
     description="ИИ-бухгалтер для ИП на УСН — автоматизация учёта, налогов и деклараций",
     version="0.1.0",
     lifespan=lifespan,
-    docs_url="/api/docs" if settings.is_development else None,
-    redoc_url="/api/redoc" if settings.is_development else None,
-    openapi_url="/api/openapi.json" if settings.is_development else None,
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
 )
 
 # === CORS ===
@@ -44,6 +45,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "http://138.124.108.144",
+        "http://138.124.108.144:80",
     ],
     allow_credentials=True,
     allow_methods=["*"],

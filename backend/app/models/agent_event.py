@@ -1,24 +1,29 @@
 """
-Модель события AI-агента.
+Модель AgentEvent (событие / триггер для AI-агента).
 Справочник: СПРАВОЧНИК_СУЩНОСТЕЙ.md → models/agent_event.py
-Архитектура: АРХИТЕКТУРА_AI_AGENT.md → раздел 4
+Архитектура: АРХИТЕКТУРА_AI_AGENT.md → раздел 8.2
+
+Поля синхронизированы с миграцией 002_agent_tables.py
 """
 
 import uuid
 
-from sqlalchemy import Enum, ForeignKey, Integer, Text
+from sqlalchemy import Integer, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.constants.enums import AgentActionStatus, AgentTriggerType
-from app.models.base import BaseModel
+from app.models.base import BaseModel, PgEnum
 
 
 class AgentEvent(BaseModel):
     """
     Событие, запускающее цикл AI-агента.
 
-    Каждое событие — один запуск Agent Loop (observe → think → act → report).
+    Примеры триггеров:
+    - file_uploaded  → пользователь загрузил файл
+    - chat_message   → пользователь написал в чат
+    - scheduled      → плановое задание (пересчёт налогов, календарь)
     """
 
     __tablename__ = "agent_events"
@@ -33,41 +38,45 @@ class AgentEvent(BaseModel):
 
     # Тип триггера
     trigger_type: Mapped[AgentTriggerType] = mapped_column(
-        Enum(
-            AgentTriggerType,
-            name="agent_trigger_type_enum",
-            values_callable=lambda x: [e.value for e in x],
-        ),
+        PgEnum(AgentTriggerType, name="agent_trigger_type_enum"),
         nullable=False,
         index=True,
     )
 
-    # Статус обработки события
+    # Статус обработки (миграция: agent_event_status_enum)
     status: Mapped[AgentActionStatus] = mapped_column(
-        Enum(
-            AgentActionStatus,
-            name="agent_event_status_enum",
-            values_callable=lambda x: [e.value for e in x],
-        ),
-        nullable=False,
+        PgEnum(AgentActionStatus, name="agent_event_status_enum"),
         default=AgentActionStatus.PENDING,
+        nullable=False,
         index=True,
     )
 
-    # Приоритет (0 = low, 5 = normal, 10 = critical)
-    priority: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
+    # Приоритет (0=low, 5=normal, 10=critical)
+    priority: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default="5",
+    )
 
-    # Данные события (payload): file_id, operation_ids, question и т.д.
+    # Входные данные (JSON)
     payload: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
-    # Итоговое резюме агента после обработки события
+    # Резюме агента (текстовый итог обработки)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    # Сколько tool-вызовов было сделано
-    tool_calls_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # Количество вызовов инструментов
+    tool_calls_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default="0",
+    )
 
-    # Сколько токенов потрачено (input + output)
-    tokens_used: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # Количество использованных токенов
+    tokens_used: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default="0",
+    )
 
-    # Ошибка (если status = FAILED)
+    # Текст ошибки (если status = FAILED)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -4,6 +4,7 @@ Pydantic-схемы для AI Agent API.
 """
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -42,7 +43,7 @@ class AgentConfirmationResponse(BaseModel):
 
 class AgentEventOut(BaseModel):
     """Событие агента (для API-ответов)."""
-    id: str
+    id: UUID
     trigger_type: AgentTriggerType
     status: AgentActionStatus
     priority: int
@@ -57,7 +58,7 @@ class AgentEventOut(BaseModel):
 
 class AgentActionOut(BaseModel):
     """Действие агента из лога."""
-    id: str
+    id: UUID
     action_type: AgentActionType
     status: AgentActionStatus
     step_number: int
@@ -74,7 +75,7 @@ class AgentActionOut(BaseModel):
 
 class AgentConfirmationOut(BaseModel):
     """Запрос подтверждения для фронтенда."""
-    id: str
+    id: UUID
     confirmation_type: AgentConfirmationType
     status: AgentConfirmationStatus
     question: str

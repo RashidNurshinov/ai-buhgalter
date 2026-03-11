@@ -37,6 +37,9 @@ from app.models import (  # noqa: F401
     ReconciliationReport,
     AiChatMessage,
     UploadedFile,
+    AgentEvent,
+    AgentActionLog,
+    AgentConfirmation,
 )
 
 # this is the Alembic Config object

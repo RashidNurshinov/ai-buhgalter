@@ -63,10 +63,12 @@ export function taxSystemLabel(sys: string | null | undefined): string {
  */
 export function documentStatusLabel(status: string): string {
   const map: Record<string, string> = {
+    uploading: 'Загружается',
     uploaded: 'Загружен',
     processing: 'Обработка',
     recognized: 'Распознан',
     confirmed: 'Подтверждён',
+    rejected: 'Отклонён',
     error: 'Ошибка',
   };
   return map[status] || status;

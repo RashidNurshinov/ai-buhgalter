@@ -43,20 +43,23 @@ export type DocumentType =
   | 'bank_statement'
   | 'cash_receipt'
   | 'contract'
-  | 'unknown';
+  | 'bill'
+  | 'payment_order'
+  | 'other';
 
 export type DocumentStatus =
-  | 'uploaded'
+  | 'uploading'
   | 'processing'
   | 'recognized'
   | 'confirmed'
+  | 'rejected'
   | 'error';
 
 export type OperationStatus =
-  | 'new'
+  | 'pending'
   | 'classified'
   | 'confirmed'
-  | 'rejected';
+  | 'reclassified';
 
 export type CalendarEventStatus =
   | 'upcoming'
@@ -74,6 +77,8 @@ export type DeclarationStatus =
   | 'draft'
   | 'generated'
   | 'validated'
+  | 'validation_error'
+  | 'signed'
   | 'submitted'
   | 'accepted'
   | 'rejected';
@@ -135,7 +140,6 @@ export interface MonthlyAmount {
 
 export interface CalendarEvent {
   id: string;
-  user_id: string;
   event_type: CalendarEventType;
   title: string;
   description: string | null;
@@ -156,7 +160,6 @@ export interface CalendarListResponse {
 
 export interface Document {
   id: string;
-  user_id: string;
   doc_type: DocumentType;
   doc_number: string | null;
   doc_date: string | null;
@@ -174,7 +177,6 @@ export interface Document {
 
 export interface BankOperation {
   id: string;
-  user_id: string;
   operation_date: string;
   amount: number;
   counterparty_name: string | null;
@@ -251,35 +253,125 @@ export interface ValidationResult {
 
 // ==================== Agent / Chat ====================
 
+/**
+ * Запрос в чат с агентом.
+ * Соответствует backend: schemas/agent.py → AgentChatRequest
+ */
 export interface AgentChatRequest {
   message: string;
-  context?: Record<string, unknown>;
 }
 
+/**
+ * Ответ агента на вопрос в чате.
+ * Соответствует backend: schemas/agent.py → AgentChatResponse
+ *
+ * ПОЛЯ СИНХРОНИЗИРОВАНЫ С BACKEND:
+ *   message (не response), actions (не actions_taken),
+ *   confirmations (не confirmations_requested)
+ */
 export interface AgentChatResponse {
   event_id: string;
-  response: string;
-  actions_taken: AgentAction[];
-  confirmations_requested: AgentConfirmation[];
+  message: string;
+  actions: AgentActionResult[];
+  confirmations: AgentConfirmationResult[];
+  tokens_used: number;
+  cost_usd: number;
 }
 
+/**
+ * Результат выполнения tool call агентом (из поля actions в AgentChatResponse).
+ * Соответствует dict, возвращаемому ai_agent.py → _think_and_act → actions[]
+ */
+export interface AgentActionResult {
+  tool: string;
+  args: Record<string, unknown>;
+  result: Record<string, unknown>;
+  duration_ms: number;
+}
+
+/**
+ * Действие агента из лога (GET /agent/events/{id}).
+ * Соответствует backend: schemas/agent.py → AgentActionOut
+ */
 export interface AgentAction {
   id: string;
   action_type: string;
-  tool_name: string | null;
-  tool_input: Record<string, unknown> | null;
-  tool_output: Record<string, unknown> | null;
   status: string;
+  step_number: number;
+  agent_reasoning: string | null;
+  input_params: Record<string, unknown> | null;
+  output_result: Record<string, unknown> | null;
+  duration_ms: number | null;
+  tokens_input: number;
+  tokens_output: number;
   created_at: string;
 }
 
+/**
+ * Результат запроса подтверждения (из поля confirmations в AgentChatResponse).
+ * Соответствует dict из ai_agent.py → tool_result с status="confirmation_requested"
+ */
+export interface AgentConfirmationResult {
+  status: string;
+  message: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Запрос подтверждения от агента (GET /agent/confirmations).
+ * Соответствует backend: schemas/agent.py → AgentConfirmationOut
+ */
 export interface AgentConfirmation {
   id: string;
-  question: string;
-  context: Record<string, unknown> | null;
+  confirmation_type: string;
   status: string;
-  user_response: boolean | null;
+  question: string;
+  proposed_data: Record<string, unknown> | null;
+  options: unknown[] | null;
+  related_entity_type: string | null;
+  related_entity_id: string | null;
+  user_response: string | null;
   created_at: string;
+}
+
+/**
+ * Запрос подтверждения/отклонения.
+ * Соответствует backend: schemas/agent.py → AgentConfirmationResponse
+ */
+export interface AgentConfirmRequest {
+  confirmation_id: string;
+  action: 'confirm' | 'reject' | 'modify';
+  user_response?: string;
+  modified_data?: Record<string, unknown>;
+}
+
+/**
+ * Событие агента.
+ * Соответствует backend: schemas/agent.py → AgentEventOut
+ */
+export interface AgentEvent {
+  id: string;
+  trigger_type: string;
+  status: string;
+  priority: number;
+  summary: string | null;
+  tool_calls_count: number;
+  tokens_used: number;
+  created_at: string;
+  updated_at: string | null;
+}
+
+/**
+ * Статистика агента.
+ * Соответствует backend: schemas/agent.py → AgentStatsOut
+ */
+export interface AgentStats {
+  total_events: number;
+  events_today: number;
+  total_tool_calls: number;
+  total_tokens: number;
+  total_cost_usd: number;
+  pending_confirmations: number;
 }
 
 // ==================== Files ====================

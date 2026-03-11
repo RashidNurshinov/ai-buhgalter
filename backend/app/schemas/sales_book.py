@@ -1,6 +1,8 @@
 """
 Pydantic-схемы для книги продаж.
 Справочник: СПРАВОЧНИК_СУЩНОСТЕЙ.md → schemas/sales_book.py
+
+ВАЖНО: Схема должна соответствовать модели SalesBookEntry (без buyer_kpp, linked_receipt_id).
 """
 
 import uuid
@@ -18,7 +20,8 @@ class SalesBookEntryResponse(BaseModel):
     entry_date: date
     buyer_name: str | None = None
     buyer_inn: str | None = None
-    buyer_kpp: str | None = None
+    # buyer_kpp — отсутствует в модели
+    # linked_receipt_id — отсутствует в модели
     invoice_number: str | None = None
     invoice_date: date | None = None
     total_without_vat: Decimal
@@ -28,7 +31,6 @@ class SalesBookEntryResponse(BaseModel):
     quarter: int
     year: int
     linked_document_id: uuid.UUID | None = None
-    linked_receipt_id: uuid.UUID | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

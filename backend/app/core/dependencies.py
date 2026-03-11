@@ -16,10 +16,14 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 async def get_db() -> AsyncSession:
-    """Dependency: получить асинхронную сессию БД."""
+    """Dependency: получить асинхронную сессию БД с auto-commit."""
     async with async_session_factory() as session:
         try:
             yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
         finally:
             await session.close()
 

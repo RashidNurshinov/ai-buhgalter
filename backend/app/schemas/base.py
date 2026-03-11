@@ -1,5 +1,8 @@
 """
 Базовые Pydantic-схемы для стандартизированных ответов API.
+
+ВАЖНО: PaginatedResponse определён в app/schemas/common.py — единственный источник правды.
+       Не дублировать здесь!
 """
 
 from datetime import datetime
@@ -24,16 +27,6 @@ class ErrorResponse(BaseModel):
     error: str
     detail: str | None = None
     code: str | None = None
-
-
-class PaginatedResponse(BaseModel, Generic[T]):
-    """Ответ с пагинацией."""
-    success: bool = True
-    data: list[T]
-    total: int
-    page: int
-    page_size: int
-    total_pages: int
 
 
 class PaginationParams(BaseModel):
