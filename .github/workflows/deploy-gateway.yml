@@ -71,7 +71,10 @@ jobs:
             docker compose up -d --build
             echo "--- статус нашего контейнера ---"
             docker compose ps
-            echo "--- последние логи ---"
-            docker compose logs --tail=30 || true
+            # Пауза, чтобы бот успел выполнить стартовый GET /me и войти в poll-цикл.
+            echo "--- ждём 12 сек, пока бот стартует ---"
+            sleep 12
+            echo "--- последние логи (120 строк) ---"
+            docker compose logs --tail=120 --no-color || true
         env:
           MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
