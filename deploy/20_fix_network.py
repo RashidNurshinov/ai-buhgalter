@@ -1,3 +1,4 @@
+import os
 # -*- coding: utf-8 -*-
 """Fix Docker networking - nginx not on same network as backend."""
 import paramiko
@@ -7,9 +8,9 @@ import io
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
-HOST = "138.124.108.144"
+HOST = os.environ.get("DEPLOY_HOST", "")
 USER = "root"
-PASSWORD = "jlGGd9v9cnhq"
+PASSWORD = os.environ.get("DEPLOY_SSH_PASSWORD", "")
 
 def r(ssh, cmd, timeout=30):
     _, o, e = ssh.exec_command(cmd, timeout=timeout)

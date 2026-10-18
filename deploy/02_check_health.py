@@ -1,3 +1,4 @@
+import os
 # -*- coding: utf-8 -*-
 """
 Step 2: Check app health - backend logs, API response, frontend, DB state
@@ -5,9 +6,9 @@ Step 2: Check app health - backend logs, API response, frontend, DB state
 import paramiko
 import sys
 
-HOST = "138.124.108.144"
+HOST = os.environ.get("DEPLOY_HOST", "")
 USER = "root"
-PASSWORD = "jlGGd9v9cnhq"
+PASSWORD = os.environ.get("DEPLOY_SSH_PASSWORD", "")
 PROJECT_PATH = "/opt/ai-buhgalter"
 
 def run_cmd(ssh, cmd, desc=""):

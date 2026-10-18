@@ -1,3 +1,4 @@
+import os
 # -*- coding: utf-8 -*-
 """
 Step 3: Deep check - compare local vs server code, find issues
@@ -5,9 +6,9 @@ Step 3: Deep check - compare local vs server code, find issues
 import paramiko
 import sys
 
-HOST = "138.124.108.144"
+HOST = os.environ.get("DEPLOY_HOST", "")
 USER = "root"
-PASSWORD = "jlGGd9v9cnhq"
+PASSWORD = os.environ.get("DEPLOY_SSH_PASSWORD", "")
 PROJECT_PATH = "/opt/ai-buhgalter"
 
 def run_cmd(ssh, cmd, desc=""):

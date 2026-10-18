@@ -1,3 +1,4 @@
+import os
 # -*- coding: utf-8 -*-
 """
 Step 5: Fix TaxCalendarEvent.deadline -> due_date everywhere
@@ -7,9 +8,9 @@ import paramiko
 import sys
 import time
 
-HOST = "138.124.108.144"
+HOST = os.environ.get("DEPLOY_HOST", "")
 USER = "root"
-PASSWORD = "jlGGd9v9cnhq"
+PASSWORD = os.environ.get("DEPLOY_SSH_PASSWORD", "")
 PROJECT_PATH = "/opt/ai-buhgalter"
 
 def run_cmd(ssh, cmd, desc=""):
