@@ -76,5 +76,14 @@ jobs:
             sleep 12
             echo "--- последние логи (120 строк) ---"
             docker compose logs --tail=120 --no-color || true
+            # Диагностика: доступ сервера к Anthropic (нужно для Claude Code CLI).
+            echo "--- доступ к Anthropic с сервера ---"
+            for u in https://api.anthropic.com/v1/messages https://claude.ai https://statsig.anthropic.com; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$u" || echo FAIL)
+              echo "$u -> $code"
+            done
+            echo "--- ресурсы сервера ---"
+            free -h | head -2 || true
+            df -h / | tail -1 || true
         env:
           MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
