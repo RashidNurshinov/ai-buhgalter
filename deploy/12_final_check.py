@@ -1,3 +1,4 @@
+import os
 # -*- coding: utf-8 -*-
 import paramiko
 import time
@@ -6,9 +7,9 @@ import io
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
-HOST = "138.124.108.144"
+HOST = os.environ.get("DEPLOY_HOST", "")
 USER = "root"
-PASSWORD = "jlGGd9v9cnhq"
+PASSWORD = os.environ.get("DEPLOY_SSH_PASSWORD", "")
 
 def r(ssh, cmd):
     _, o, e = ssh.exec_command(cmd, timeout=60)

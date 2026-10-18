@@ -5,9 +5,9 @@ import time
 import sys
 import os
 
-HOST = "138.124.108.144"
+HOST = os.environ.get("DEPLOY_HOST", "")
 USER = "root"
-PASSWORD = "jlGGd9v9cnhq"
+PASSWORD = os.environ.get("DEPLOY_SSH_PASSWORD", "")
 PROJECT_PATH = "/opt/ai-buhgalter"
 COMPOSE_DIR = f"{PROJECT_PATH}/docker"
 

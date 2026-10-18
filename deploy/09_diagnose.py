@@ -1,10 +1,11 @@
+import os
 # -*- coding: utf-8 -*-
 import paramiko
 import sys
 
-HOST = "138.124.108.144"
+HOST = os.environ.get("DEPLOY_HOST", "")
 USER = "root"
-PASSWORD = "jlGGd9v9cnhq"
+PASSWORD = os.environ.get("DEPLOY_SSH_PASSWORD", "")
 
 def run(ssh, cmd):
     _, stdout, stderr = ssh.exec_command(cmd, timeout=30)
