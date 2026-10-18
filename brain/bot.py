@@ -196,6 +196,10 @@ async def handle_message(client: httpx.AsyncClient, sessions: dict, update: dict
         await send_message(client, **reply_to, text="🎯 Принял, думаю…")
         started = time.time()
         answer, new_session = await ask_claude(text, sessions.get(key))
+        if answer.startswith("⚠️") and "No conversation found" in answer:
+            # Сессия потерялась — начинаем новую, а не отвечаем ошибкой.
+            log.info("сессия чата %s потеряна, начинаю новую", key)
+            answer, new_session = await ask_claude(text, None)
         log.info("claude ответил за %.0f c (чат %s)", time.time() - started, key)
         if new_session:
             sessions[key] = new_session

@@ -28,7 +28,7 @@ services:
 
 volumes:
   claude_home:
-    name: marketing_brain_claude_home
+    name: marketing_brain_claude_sessions
 
 networks:
   marketing_brain_net:

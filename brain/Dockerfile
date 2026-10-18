@@ -17,6 +17,10 @@ RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} && npm cache
 WORKDIR /app
 COPY bot.py .
 
+# Папка истории сессий Claude Code (для --resume) должна принадлежать node,
+# иначе том создаётся от root и сессии не сохраняются.
+RUN mkdir -p /home/node/.claude && chown node:node /home/node/.claude
+
 # Не root: Claude Code работает под обычным пользователем node.
 USER node
 
