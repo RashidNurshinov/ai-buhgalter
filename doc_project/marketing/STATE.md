@@ -95,6 +95,23 @@
 2. После этого workflow «Deploy marketing gateway» задеплоит сам (push или Run workflow).
 3. Проверить в MAX: написать боту — он ответит эхом.
 
+### 🔴 ТЕКУЩАЯ ТОЧКА (перезапуск сессии 2026-10-18 ~16:00)
+- @boss сказал, что секреты добавил. @director запустил workflow (run_workflow через GitHub API).
+- Workflow УПАЛ за ~14 сек. Ошибка: `Error: can't connect without a private SSH key or password`.
+- Вывод: секрет с паролем пришёл ПУСТЫМ → имя секрета не совпадает, либо сохранён как Variable /
+  Environment secret вместо **Repository secret**.
+- Ждём от @boss: точное имя секрета пароля (должно быть ровно `SERVER_SSH_PASSWORD`) и где он лежит
+  (вкладка Secrets, раздел Repository secrets). Ссылка:
+  https://github.com/RashidNurshinov/ai-buhgalter/settings/secrets/actions
+- КАК ПРОДОЛЖИТЬ после перезапуска: как только @boss поправит имена секретов и скажет «готово» —
+  @director перезапускает деплой: mcp__github__actions_run_trigger method=run_workflow,
+  owner=RashidNurshinov, repo=ai-buhgalter, workflow_id=deploy-gateway.yml, ref=claude/modest-dirac-lci3eg.
+  Потом смотрит логи: actions_list list_workflow_runs -> get_job_logs failed_only.
+- Инструменты GitHub Actions грузятся через ToolSearch (в новой сессии их надо подгрузить заново):
+  select:mcp__github__actions_run_trigger,mcp__github__actions_list,mcp__github__get_job_logs
+- Файлы шлюза уже в репо (ветка claude/modest-dirac-lci3eg), менять код не нужно — только секреты.
+- Ветка разработки этой сессии: `claude/modest-dirac-lci3eg`.
+
 ## ⏭️ ГДЕ ОСТАНОВИЛИСЬ / ЧТО ДАЛЬШЕ (на старте новой сессии)
 1. @boss перезапускает сессию, чтобы появились переменные сервера (`DEPLOY_HOST` и т.д. как ОБЫЧНЫЕ
    переменные, НЕ сетевые секреты).

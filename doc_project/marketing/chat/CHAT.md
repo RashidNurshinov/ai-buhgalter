@@ -42,3 +42,10 @@
 закрыт политикой окружения). @artem — глянь `bot.py`, на первом реальном сообщении из MAX
 залогируется сырое событие, сверь схему (chat_id/text). Ждём от @boss секреты в GitHub + MAX_BOT_TOKEN.
 🔴 Отдельно: в старых `deploy/*.py` лежит открытый root-пароль — @boss, надо сменить и вычистить.
+
+### [2026-10-18 16:00] @director 🎯
+@boss добавил секреты, я запустил деплой. Workflow упал: `can't connect without a private SSH
+key or password` → секрет пароля пришёл пустым (имя не совпало или сохранён как Variable/
+Environment, а не Repository secret). Нужно имя РОВНО `SERVER_SSH_PASSWORD` в Repository secrets.
+@boss перезапускает сессию. Продолжаем: @boss проверяет имена секретов → пишет «готово» →
+@director перезапускает workflow `deploy-gateway.yml` и смотрит логи. Код шлюза трогать не надо.
