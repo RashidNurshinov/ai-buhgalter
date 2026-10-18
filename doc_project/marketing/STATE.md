@@ -71,6 +71,30 @@
   Завести отдельного пользователя `marketing` + SSH-ключ + изолированная папка `/home/marketing/app`.
   Деплой через `git pull` + docker, чтобы не задеть соседние сервисы.
 
+## 🚀 ШЛЮЗ НА СЕРВЕР — статус (2026-10-18)
+- @boss подтвердил: актуальный сервер **82.117.87.252**, на нём ЕСТЬ другие проекты → НЕ навреди.
+- Переменные сервера теперь ВИДНЫ в сессии: `DEPLOY_HOST`=82.117.87.252, `DEPLOY_USER`=root,
+  `DEPLOY_PASSWORD` (12 симв.) — в чат/код не выводим.
+- **SSH из сессии НЕВОЗМОЖЕН**: окружение выпускает только HTTPS (443) через прокси, порт 22
+  закрыт на любой адрес, ssh-клиента нет. Деплой делаем **с GitHub Actions** (у раннеров SSH открыт).
+- 🔴 УТЕЧКА: в `deploy/*.py` открытым текстом root-пароль от СТАРОГО сервера `138.124.108.144`.
+  Надо: сменить тот пароль + вычистить из файлов и истории git. (ожидает решения @boss)
+- Бот: у @boss есть бот в **MAX** (≈как Telegram). MAX Bot API: хост `platform-api2.max.ru`,
+  токен в заголовке `Authorization`, есть long polling (`GET /updates`) и webhook.
+- РЕШЕНИЕ: 1-й этап — **long polling эхо-бот** (НЕ открывает портов, nginx не трогаем → изоляция).
+- Сделано и лежит в `gateway/`: `bot.py` (эхо, long polling), `Dockerfile`, `docker-compose.yml`
+  (проект `marketing-gateway`, контейнер `marketing_gateway`, без портов), `deploy.sh`, README.
+- CI: `.github/workflows/deploy-gateway.yml` — scp файлов + `docker compose up` ТОЛЬКО нашего проекта.
+- Каталог на сервере: `/opt/ai-marketing-gateway` (отдельно от `/opt/ai-buhgalter`).
+- Ветка разработки СЕЙЧАС: `claude/modest-dirac-lci3eg` (задана в требованиях сессии).
+
+### Что нужно от @boss для запуска шлюза
+1. GitHub → Settings → Secrets and variables → Actions, добавить:
+   `SERVER_HOST`=82.117.87.252, `SERVER_USER`=root (или отд. польз.),
+   `SERVER_SSH_PASSWORD` (или `SERVER_SSH_KEY`), `MAX_BOT_TOKEN`.
+2. После этого workflow «Deploy marketing gateway» задеплоит сам (push или Run workflow).
+3. Проверить в MAX: написать боту — он ответит эхом.
+
 ## ⏭️ ГДЕ ОСТАНОВИЛИСЬ / ЧТО ДАЛЬШЕ (на старте новой сессии)
 1. @boss перезапускает сессию, чтобы появились переменные сервера (`DEPLOY_HOST` и т.д. как ОБЫЧНЫЕ
    переменные, НЕ сетевые секреты).
