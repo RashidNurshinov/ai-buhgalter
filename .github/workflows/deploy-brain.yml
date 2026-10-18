@@ -95,6 +95,12 @@ jobs:
             docker compose ps --status running --quiet | grep -q . || { echo "контейнер не запущен"; exit 1; }
             echo "--- claude внутри контейнера ---"
             docker compose exec -T brain claude --version
+            echo "--- самопроверка claude -p в рабочей папке ---"
+            docker compose exec -T -w /data/workspace brain \
+              timeout 180 claude -p "Кто ты в этом проекте? Одно предложение." --output-format json --max-turns 40 \
+              2>&1 | python3 -c "import sys,json; d=json.loads(sys.stdin.read() or '{}'); d.pop('usage',None); d.pop('modelUsage',None); print(json.dumps(d,ensure_ascii=False)[:1500])" || true
+            echo "--- логи после самопроверки ---"
+            docker compose logs --tail=20 --no-color | grep -E "claude|WARN|ERROR" || true
             echo "--- место после сборки ---"
             df -h / | tail -1
 

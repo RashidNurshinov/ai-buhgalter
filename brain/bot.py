@@ -155,9 +155,13 @@ async def ask_claude(text: str, session_id):
     except ValueError:
         log.warning("claude: не JSON. stderr=%s", err.decode()[:500])
         return "⚠️ Claude Code вернул что-то непонятное, глянь логи контейнера.", session_id
-    if data.get("is_error"):
-        log.warning("claude is_error: %s", str(data)[:500])
-    return data.get("result") or "⚠️ Пустой ответ.", data.get("session_id") or session_id
+    meta = {k: data.get(k) for k in ("subtype", "is_error", "num_turns", "permission_denials")}
+    log.info("claude meta: %s stderr=%s", str(meta)[:800], err.decode()[-500:])
+    result = data.get("result")
+    if not result:
+        result = (f"⚠️ Claude Code не дал текста (subtype={meta['subtype']}, "
+                  f"шагов={meta['num_turns']}). stderr: {err.decode()[-300:] or '—'}")
+    return result, data.get("session_id") or session_id
 
 
 async def handle_message(client: httpx.AsyncClient, sessions: dict, update: dict):
