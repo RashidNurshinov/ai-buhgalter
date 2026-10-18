@@ -1,0 +1,35 @@
+name: Gateway logs (diagnostics)
+
+# Только диагностика: заходит по SSH и показывает статус и логи
+# нашего контейнера marketing_gateway. НИЧЕГО не перезапускает и не пересобирает.
+
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-gateway
+  cancel-in-progress: false
+
+env:
+  APP_DIR: /opt/ai-marketing-gateway
+
+jobs:
+  logs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read gateway status and logs (ssh)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_SSH_PASSWORD }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
+          script_stop: false
+          script: |
+            cd "${{ env.APP_DIR }}/gateway" || { echo "нет каталога gateway"; exit 0; }
+            echo "=== docker compose ps ==="
+            docker compose ps || true
+            echo ""
+            echo "=== последние 120 строк логов ==="
+            docker compose logs --tail=120 --no-color || true
