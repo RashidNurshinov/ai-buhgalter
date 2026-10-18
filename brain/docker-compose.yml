@@ -1,0 +1,35 @@
+# Изолированный compose-проект «мозга» отдела маркетинга (NL-сервер).
+# Нет секции ports -> контейнер ничего не слушает наружу (long polling).
+name: marketing-brain
+
+services:
+  brain:
+    build: .
+    image: marketing-brain:latest
+    container_name: marketing_brain
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ../workspace:/data/workspace       # память проекта: CLAUDE.md, агенты, STATE.md
+      - ../data:/data/state                # sessions.json (чат MAX -> сессия Claude)
+      - claude_home:/home/node/.claude     # история сессий Claude Code для --resume
+    environment:
+      WORKSPACE: /data/workspace
+      SESSIONS_FILE: /data/state/sessions.json
+    mem_limit: 1500m
+    networks:
+      - marketing_brain_net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  claude_home:
+    name: marketing_brain_claude_home
+
+networks:
+  marketing_brain_net:
+    name: marketing_brain_net

@@ -1,0 +1,117 @@
+name: Deploy marketing brain (NL)
+
+# Деплой «мозга» (MAX -> Claude Code) на голландский сервер.
+# ИЗОЛЯЦИЯ: трогает только /opt/ai-marketing-brain и compose-проект marketing-brain.
+# Соседние проекты сервера (gambit-*, vpn, nginx и т.д.) не затрагивает.
+#
+# Секреты: NL_SERVER_HOST, NL_SERVER_USER, NL_SERVER_SSH_PASSWORD | NL_SERVER_SSH_KEY,
+#   NL_SERVER_SSH_PORT (необяз.), MAX_BOT_TOKEN, CLAUDE_CODE_OAUTH_TOKEN,
+#   MAX_ALLOWED_USER_IDS (кому бот отвечает; пока пусто — отвечает только на /id).
+# После успешного старта останавливает эхо-шлюз на RU-сервере (тот же токен MAX,
+# два поллера делили бы сообщения). Секреты RU: SERVER_HOST, SERVER_USER, SERVER_SSH_PASSWORD.
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - claude/sleepy-albattani-2hgoxa
+    paths:
+      - "brain/**"
+      - "CLAUDE.md"
+      - ".claude/agents/**"
+      - "doc_project/marketing/**"
+      - ".github/workflows/deploy-brain.yml"
+
+concurrency:
+  group: deploy-brain
+  cancel-in-progress: false
+
+env:
+  APP_DIR: /opt/ai-marketing-brain
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Bundle brain + project memory
+        run: |
+          mkdir -p bundle
+          cp -r brain bundle/brain
+          rm -f bundle/brain/.env
+          tar czf bundle/workspace.tgz CLAUDE.md .claude/agents doc_project/marketing
+
+      - name: Copy bundle to NL server (scp)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.NL_SERVER_HOST }}
+          username: ${{ secrets.NL_SERVER_USER }}
+          password: ${{ secrets.NL_SERVER_SSH_PASSWORD }}
+          key: ${{ secrets.NL_SERVER_SSH_KEY }}
+          port: ${{ secrets.NL_SERVER_SSH_PORT || 22 }}
+          source: "bundle/*"
+          target: ${{ env.APP_DIR }}
+          strip_components: 1
+          overwrite: true
+
+      - name: Build & start only our compose project (ssh)
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          MAX_ALLOWED_USER_IDS: ${{ secrets.MAX_ALLOWED_USER_IDS }}
+        with:
+          host: ${{ secrets.NL_SERVER_HOST }}
+          username: ${{ secrets.NL_SERVER_USER }}
+          password: ${{ secrets.NL_SERVER_SSH_PASSWORD }}
+          key: ${{ secrets.NL_SERVER_SSH_KEY }}
+          port: ${{ secrets.NL_SERVER_SSH_PORT || 22 }}
+          script_stop: true
+          command_timeout: 20m
+          envs: MAX_BOT_TOKEN,CLAUDE_CODE_OAUTH_TOKEN,MAX_ALLOWED_USER_IDS
+          script: |
+            set -euo pipefail
+            cd "${{ env.APP_DIR }}"
+            # Диск на сервере почти полон — не лезем, если места меньше 1.5 ГБ.
+            free_kb=$(df --output=avail / | tail -1)
+            echo "свободно на /: $((free_kb/1024)) МБ"
+            [ "$free_kb" -gt 1500000 ] || { echo "Мало места, деплой отменён"; exit 1; }
+            mkdir -p workspace data
+            # Память проекта: обновляем файлы из git, наработки бота (output/ и т.п.) не трогаем.
+            tar xzf workspace.tgz -C workspace && rm -f workspace.tgz
+            chown -R 1000:1000 workspace data
+            cd brain
+            umask 077
+            printf 'MAX_BOT_TOKEN=%s\nCLAUDE_CODE_OAUTH_TOKEN=%s\nMAX_ALLOWED_USER_IDS=%s\n' \
+              "$MAX_BOT_TOKEN" "$CLAUDE_CODE_OAUTH_TOKEN" "$MAX_ALLOWED_USER_IDS" > .env
+            docker compose up -d --build
+            sleep 25
+            echo "--- статус ---"
+            docker compose ps
+            echo "--- логи ---"
+            docker compose logs --tail=30 --no-color
+            docker compose ps --status running --quiet | grep -q . || { echo "контейнер не запущен"; exit 1; }
+            echo "--- claude внутри контейнера ---"
+            docker compose exec -T brain claude --version
+            echo "--- место после сборки ---"
+            df -h / | tail -1
+
+  stop-ru-echo:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stop only our echo gateway on RU server (ssh)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_SSH_PASSWORD }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
+          script_stop: false
+          script: |
+            cd /opt/ai-marketing-gateway/gateway 2>/dev/null || { echo "эхо-шлюза нет — ок"; exit 0; }
+            docker compose stop
+            docker compose ps

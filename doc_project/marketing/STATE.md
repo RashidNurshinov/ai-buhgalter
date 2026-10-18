@@ -4,7 +4,7 @@
 > поэтому здесь записано ВСЁ: кто мы, что решили, где остановились, что дальше.
 > **В новой сессии: прочитай этот файл + `USTAV.md` — и ты полностью в курсе.**
 
-Последнее обновление: 2026-10-18 (сессия: шлюз MAX задеплоен и работает, упёрлись в блок Anthropic из РФ).
+Последнее обновление: 2026-10-18 (сессия: NL-сервер проверен, собран «мозг» MAX → Claude Code).
 
 ## Кто владелец и что за бизнес
 - **@boss — Рашид Нуршинов** (ИП Нуршинов Р.У.), почта rnurshinov@gmail.com.
@@ -96,74 +96,31 @@
 - **НО пароль остаётся в ИСТОРИИ git** (в master, коммиты 0dcd7a9 и 6b0a6d8).
   → Нужна РОТАЦИЯ пароля на сервере + решение @boss по вычистке истории. НЕ ЗАБЫТЬ.
 
-## 🚀 ШЛЮЗ НА СЕРВЕР — статус (2026-10-18)
-- @boss подтвердил: актуальный сервер **82.117.87.252**, на нём ЕСТЬ другие проекты → НЕ навреди.
-- Переменные сервера теперь ВИДНЫ в сессии: `DEPLOY_HOST`=82.117.87.252, `DEPLOY_USER`=root,
-  `DEPLOY_PASSWORD` (12 симв.) — в чат/код не выводим.
-- **SSH из сессии НЕВОЗМОЖЕН**: окружение выпускает только HTTPS (443) через прокси, порт 22
-  закрыт на любой адрес, ssh-клиента нет. Деплой делаем **с GitHub Actions** (у раннеров SSH открыт).
-- 🔴 УТЕЧКА: в `deploy/*.py` открытым текстом root-пароль от СТАРОГО сервера `138.124.108.144`.
-  Надо: сменить тот пароль + вычистить из файлов и истории git. (ожидает решения @boss)
-- Бот: у @boss есть бот в **MAX** (≈как Telegram). MAX Bot API: хост `platform-api2.max.ru`,
-  токен в заголовке `Authorization`, есть long polling (`GET /updates`) и webhook.
-- РЕШЕНИЕ: 1-й этап — **long polling эхо-бот** (НЕ открывает портов, nginx не трогаем → изоляция).
-- Сделано и лежит в `gateway/`: `bot.py` (эхо, long polling), `Dockerfile`, `docker-compose.yml`
-  (проект `marketing-gateway`, контейнер `marketing_gateway`, без портов), `deploy.sh`, README.
-- CI: `.github/workflows/deploy-gateway.yml` — scp файлов + `docker compose up` ТОЛЬКО нашего проекта.
-- Каталог на сервере: `/opt/ai-marketing-gateway` (отдельно от `/opt/ai-buhgalter`).
-- Ветка разработки СЕЙЧАС: `claude/modest-dirac-lci3eg` (задана в требованиях сессии).
+## 🇳🇱 NL-сервер и «мозг» (2026-10-18, ветка `claude/sleepy-albattani-2hgoxa`)
+- Секреты в GitHub заведены @boss: `NL_SERVER_HOST`, `NL_SERVER_USER` (root), `NL_SERVER_SSH_PASSWORD`,
+  `CLAUDE_CODE_OAUTH_TOKEN` (проверен: `claude -p` ответил). Ключа SSH нет — вход по паролю.
+- Диагностика (workflow `nl-diagnose.yml`, только чтение) показала:
+  - Ubuntu 24.04, 2 CPU, 3.8 ГБ RAM, **диск занят на 93% (свободно ~4 ГБ)** — тесно, следить.
+  - Docker 29 + compose v5 есть. Соседи: `gambit-moysklad-gateway` (docker), gambit-accounting,
+    vpn-service/marzban, nginx :80/:443, postgres, node на 127.0.0.1:18789. НЕ ТРОГАТЬ.
+  - MAX `platform-api2.max.ru` доступен (с CA Минцифры). Anthropic доступен (401 без ключа, не гео-блок).
+  - ⚠️ **`api.moysklad.ru` из NL — timeout.** МойСклад из Нидерландов не отвечает →
+    данные МойСклада надо тянуть с RU-сервера (82.117.87.252) или через RU-релей. Не решено.
+- Сделано: папка `brain/` — MAX long polling → `claude -p --resume` (своя сессия на чат) в рабочей
+  папке с памятью (CLAUDE.md, `.claude/agents/`, `doc_project/marketing/`).
+  Безопасность: отвечает только `MAX_ALLOWED_USER_IDS` (остальным — отказ + их ID, команда `/id`);
+  Claude Code без `bypassPermissions`, только явный список: Task, запись в `doc_project/marketing/**`,
+  Bash только `doc_project/marketing/scripts/*`. Пользователь node, не root.
+- Деплой: `.github/workflows/deploy-brain.yml` → `/opt/ai-marketing-brain`, проект `marketing-brain`,
+  контейнер `marketing_brain`, портов нет. После старта останавливает эхо-шлюз на RU (тот же токен MAX).
+- Память, которую бот пишет на сервере (STATE.md, output/), пока НЕ синхронизируется обратно в git.
 
-### Что нужно от @boss для запуска шлюза
-1. GitHub → Settings → Secrets and variables → Actions, добавить:
-   `SERVER_HOST`=82.117.87.252, `SERVER_USER`=root (или отд. польз.),
-   `SERVER_SSH_PASSWORD` (или `SERVER_SSH_KEY`), `MAX_BOT_TOKEN`.
-2. После этого workflow «Deploy marketing gateway» задеплоит сам (push или Run workflow).
-3. Проверить в MAX: написать боту — он ответит эхом.
-
-### 🔴 ТЕКУЩАЯ ТОЧКА (перезапуск сессии 2026-10-18 ~16:00)
-- @boss сказал, что секреты добавил. @director запустил workflow (run_workflow через GitHub API).
-- Workflow УПАЛ за ~14 сек. Ошибка: `Error: can't connect without a private SSH key or password`.
-- Вывод: секрет с паролем пришёл ПУСТЫМ → имя секрета не совпадает, либо сохранён как Variable /
-  Environment secret вместо **Repository secret**.
-- Ждём от @boss: точное имя секрета пароля (должно быть ровно `SERVER_SSH_PASSWORD`) и где он лежит
-  (вкладка Secrets, раздел Repository secrets). Ссылка:
-  https://github.com/RashidNurshinov/ai-buhgalter/settings/secrets/actions
-- КАК ПРОДОЛЖИТЬ после перезапуска: как только @boss поправит имена секретов и скажет «готово» —
-  @director перезапускает деплой: mcp__github__actions_run_trigger method=run_workflow,
-  owner=RashidNurshinov, repo=ai-buhgalter, workflow_id=deploy-gateway.yml, ref=claude/modest-dirac-lci3eg.
-  Потом смотрит логи: actions_list list_workflow_runs -> get_job_logs failed_only.
-- Инструменты GitHub Actions грузятся через ToolSearch (в новой сессии их надо подгрузить заново):
-  select:mcp__github__actions_run_trigger,mcp__github__actions_list,mcp__github__get_job_logs
-- Файлы шлюза уже в репо (ветка claude/modest-dirac-lci3eg), менять код не нужно — только секреты.
-- Ветка разработки этой сессии: `claude/modest-dirac-lci3eg`.
-
-## ⏭️ ГДЕ ОСТАНОВИЛИСЬ / ЧТО ДАЛЬШЕ (на старте новой сессии)
-**Цель @boss:** общаться в MAX со мной и командой (не эхо, а настоящие ответы с памятью и МойСклад).
-
-Эхо-шлюз (1-й этап) РАБОТАЕТ. «Мозг» (2-й этап) упёрся в блокировку Anthropic из РФ (см. грабли №2).
-Разобранные варианты:
-- Платный API Anthropic — @boss отказался: «загоняет в рамки» (деньги, лимиты) + тот же блок.
-- Claude Code CLI на RU-сервере по подписке (`claude setup-token`) — не поедет из-за блока.
-- Российская модель (GigaChat / YandexGPT / DeepSeek / локальная) — легально работает из РФ,
-  вся архитектура и роли команды сохраняются, меняется только кто пишет текст. ЗАПАСНОЙ ВАРИАНТ.
-- **ТЕКУЩИЙ КУРС:** у @boss есть **голландский сервер** → Anthropic оттуда доступен штатно.
-
-Ждём от @boss (на этом остановились):
-1. Доступы к NL-серверу секретами: `NL_SERVER_HOST`, `NL_SERVER_USER`, `NL_SERVER_SSH_PASSWORD`/`_KEY`.
-   Плюс: стоит ли там Docker, какие ещё проекты крутятся (изолировать так же).
-2. `claude setup-token` на своём компьютере → секрет `CLAUDE_CODE_OAUTH_TOKEN` (подписка, НЕ платный API).
-   Токен @boss вводит сам в GitHub, в чат/код он не попадает.
-
-Дальше @director:
-3. ПЕРВЫМ ДЕЛОМ проверить фактом: достаёт ли NL-сервер до MAX (`platform-api2.max.ru`).
-   Если нет — план Б: шлюз остаётся на RU-сервере, мозг в NL, связь только исходящим HTTPS.
-4. Поставить Claude Code в контейнер + клон репо (чтобы подхватились `.claude/agents/` и память),
-   заменить эхо в `bot.py` на `claude -p` с `--resume` на каждый чат MAX.
-
-Не зависит от блокировок и приносит деньги — можно делать ПАРАЛЛЕЛЬНО:
-5. Первый рабочий прогон: @damir → подборка залежалых + привоз на реальных данных (токены рабочие),
-   @boss выбирает → @aliya скидка → @dasha карточка → @elina ролик → @irina пост.
-   Вся эта автоматика — обычный код, модель нужна только для текстов.
+## ⏭️ ГДЕ ОСТАНОВИЛИСЬ / ЧТО ДАЛЬШЕ
+1. Задеплоить мозг, @boss пишет боту `/id` → добавляет секрет `MAX_ALLOWED_USER_IDS` → передеплой.
+2. МойСклад: решить доступ из NL (RU-релей на 82.117.87.252 по HTTPS или выгрузка подборки с RU).
+3. Синхронизация памяти бота с git (чтобы облачные сессии видели, что решили в MAX).
+4. 🔴 Хвост безопасности: ротация старого root-пароля 138.124.108.144 + чистка истории git.
+5. Первый рабочий прогон по подборке @damir (`output/kandidaty_2026-10-18.md`).
 
 ## Открытые вопросы к @boss
 - ОС сервера, docker, занятые порты, свободные ресурсы, домен?
