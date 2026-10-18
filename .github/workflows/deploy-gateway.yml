@@ -71,19 +71,16 @@ jobs:
             docker compose up -d --build
             echo "--- статус нашего контейнера ---"
             docker compose ps
-            # Пауза, чтобы бот успел выполнить стартовый GET /me и войти в poll-цикл.
-            echo "--- ждём 12 сек, пока бот стартует ---"
-            sleep 12
-            echo "--- последние логи (120 строк) ---"
-            docker compose logs --tail=120 --no-color || true
-            # Диагностика: доступ сервера к Anthropic (нужно для Claude Code CLI).
-            echo "--- доступ к Anthropic с сервера ---"
-            for u in https://api.anthropic.com/v1/messages https://claude.ai https://statsig.anthropic.com; do
-              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$u" || echo FAIL)
-              echo "$u -> $code"
-            done
-            echo "--- ресурсы сервера ---"
-            free -h | head -2 || true
-            df -h / | tail -1 || true
+            # Диагностика: какой именно ответ отдаёт Anthropic этому серверу.
+            # Нужно отличить обычное "нет ключа" от гео-блокировки.
+            echo "--- тело ответа api.anthropic.com ---"
+            curl -s -X POST https://api.anthropic.com/v1/messages \
+              -H 'content-type: application/json' \
+              -d '{"model":"x","max_tokens":1,"messages":[]}' \
+              --max-time 20 | head -c 600 || echo "запрос не прошёл"
+            echo ""
+            echo "--- заголовки ответа ---"
+            curl -s -o /dev/null -D - -X POST https://api.anthropic.com/v1/messages \
+              --max-time 20 2>/dev/null | grep -iE '^(HTTP/|cf-|server:|x-should)' | head -8 || true
         env:
           MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
