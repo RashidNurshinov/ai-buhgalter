@@ -1,0 +1,106 @@
+name: NL server diagnostics (read-only)
+
+# Только чтение: смотрит голландский сервер перед деплоем «мозга».
+# НИЧЕГО не ставит, не перезапускает и не меняет.
+#
+# Секреты репозитория:
+#   NL_SERVER_HOST, NL_SERVER_USER,
+#   NL_SERVER_SSH_PASSWORD или NL_SERVER_SSH_KEY,
+#   NL_SERVER_SSH_PORT (необязательно, по умолчанию 22),
+#   CLAUDE_CODE_OAUTH_TOKEN (проверяем только наличие и что токен принимается).
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - claude/sleepy-albattani-2hgoxa
+    paths:
+      - ".github/workflows/nl-diagnose.yml"
+
+jobs:
+  secrets-present:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Which secrets are set (lengths only, values never printed)
+        env:
+          H: ${{ secrets.NL_SERVER_HOST }}
+          U: ${{ secrets.NL_SERVER_USER }}
+          P: ${{ secrets.NL_SERVER_SSH_PASSWORD }}
+          K: ${{ secrets.NL_SERVER_SSH_KEY }}
+          T: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          for v in H U P K T; do
+            n=${!v}; echo "$v: ${#n} симв."
+          done
+          echo "(H=NL_SERVER_HOST U=NL_SERVER_USER P=..._PASSWORD K=..._KEY T=CLAUDE_CODE_OAUTH_TOKEN)"
+
+  claude-token:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check that the Claude Code token is accepted
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then echo "CLAUDE_CODE_OAUTH_TOKEN пуст"; exit 0; fi
+          npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
+          claude --version
+          timeout 120 claude -p "Ответь одним словом: работаю" --max-turns 1 2>&1 | head -c 400 || echo "claude -p не ответил"
+
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare Mintsifry CA for MAX TLS check
+        run: echo "MAX_CA_B64=$(cat gateway/certs/*.pem | base64 -w0)" >> "$GITHUB_ENV"
+
+      - name: Look at the server (ssh, read-only)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.NL_SERVER_HOST }}
+          username: ${{ secrets.NL_SERVER_USER }}
+          password: ${{ secrets.NL_SERVER_SSH_PASSWORD }}
+          key: ${{ secrets.NL_SERVER_SSH_KEY }}
+          port: ${{ secrets.NL_SERVER_SSH_PORT || 22 }}
+          script_stop: false
+          envs: MAX_CA_B64
+          script: |
+            echo "=== кто/где ==="
+            whoami; id; hostname
+            . /etc/os-release 2>/dev/null && echo "$PRETTY_NAME"; uname -m
+            uptime
+            echo "=== ресурсы ==="
+            nproc; free -h; df -h / /opt 2>/dev/null
+            echo "=== страна по IP ==="
+            curl -s --max-time 10 https://ipinfo.io/country || echo "не определилась"
+            echo ""
+            echo "=== docker ==="
+            if command -v docker >/dev/null; then
+              docker --version; docker compose version 2>/dev/null || echo "compose plugin: НЕТ"
+              docker ps --format '{{.Names}}\t{{.Image}}\t{{.Ports}}\t{{.Status}}' 2>&1 | head -40
+            else
+              echo "docker НЕ установлен"
+            fi
+            echo "=== другие проекты ==="
+            ls -la /opt 2>/dev/null; ls /home 2>/dev/null
+            systemctl list-units --type=service --state=running --no-pager --no-legend 2>/dev/null \
+              | awk '{print $1}' | grep -vE '^(systemd|dbus|cron|ssh|getty|serial|user@|polkit|rsyslog|networkd|unattended|multipathd|udisks|ModemManager|snapd|containerd|docker)' | head -30
+            echo "=== слушающие порты ==="
+            ss -tlnp 2>/dev/null | awk 'NR>1{print $4, $6}' | head -40
+            echo "=== node/git ==="
+            node --version 2>/dev/null || echo "node НЕТ"; git --version 2>/dev/null || echo "git НЕТ"
+            echo "=== MAX (platform-api2.max.ru) ==="
+            ca=$(mktemp); echo "$MAX_CA_B64" | base64 -d > "$ca"
+            curl -sS -o /dev/null -w 'с CA Минцифры: HTTP %{http_code}, %{time_total}s\n' \
+              --cacert "$ca" --max-time 20 https://platform-api2.max.ru/me || echo "MAX НЕ ДОСТУПЕН"
+            rm -f "$ca"
+            echo "=== Anthropic ==="
+            for u in https://api.anthropic.com/v1/messages; do
+              curl -s -X POST "$u" -H 'content-type: application/json' \
+                -d '{"model":"x","max_tokens":1,"messages":[]}' --max-time 20 | head -c 300 || echo "не прошёл"
+              echo ""
+            done
+            curl -sS -o /dev/null -w 'claude.ai: HTTP %{http_code}\n' --max-time 20 https://claude.ai || true
+            curl -sS -o /dev/null -w 'registry.npmjs.org: HTTP %{http_code}\n' --max-time 20 https://registry.npmjs.org/ || true
+            curl -sS -o /dev/null -w 'api.moysklad.ru: HTTP %{http_code}\n' --max-time 20 https://api.moysklad.ru/api/remap/1.2 || true
