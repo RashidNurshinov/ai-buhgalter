@@ -1,0 +1,295 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Russo;src:url(fonts/RussoOne.ttf)}
+@font-face{font-family:Mont;src:url(fonts/Montserrat.ttf);font-weight:100 900}
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#000}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden;transform-origin:540px 960px}
+.layer{position:absolute;left:0;top:0;width:1080px;height:1920px}
+.scene{position:absolute;left:0;top:0;width:1080px;height:1920px;display:none}
+.t{position:absolute;left:0;width:1080px;text-align:center;font-family:Russo;color:#fff;
+   text-transform:uppercase;white-space:nowrap;line-height:1}
+.l{display:inline-block;will-change:transform,opacity}
+.img{position:absolute;will-change:transform}
+.badge{position:absolute;left:90px;width:900px;height:94px;background:#fff;border-radius:16px;
+   display:flex;align-items:center;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.badge .ic{width:94px;height:94px;flex:none;display:flex;align-items:center;justify-content:center;
+   color:#fff;font:700 54px "DejaVu Sans"}
+.badge .tx{padding-left:28px;font:800 46px Mont;color:#0B1E5B;white-space:nowrap}
+#footer{position:absolute;left:0;top:1816px;width:1080px;height:104px;background:rgba(5,12,40,.55);
+   display:flex;align-items:center;justify-content:center;font:700 36px Mont;color:#fff;letter-spacing:.5px}
+#footer b{color:#ff3341}
+.wipe{position:absolute;top:-100px;height:2120px;width:1700px;transform-origin:0 0}
+#flash{position:absolute;left:0;top:0;width:1080px;height:1920px;background:#fff;opacity:0;pointer-events:none}
+.rays{position:absolute;border-radius:50%;
+   background:repeating-conic-gradient(rgba(255,255,255,.13) 0 9deg,rgba(255,255,255,0) 9deg 22deg)}
+.glow{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.55),rgba(255,255,255,0) 65%)}
+.flake{position:absolute;color:#fff;font:400 40px "DejaVu Sans"}
+</style></head>
+<body>
+<div id="stage">
+  <div id="bg" class="layer"></div>
+  <div id="stripes" class="layer"></div>
+  <div id="snow" class="layer"></div>
+
+  <!-- A: интро -->
+  <div id="A" class="scene">
+    <div id="bandR" class="abs" style="position:absolute;width:1600px;height:200px;background:#E30613"></div>
+    <div id="bandB" class="abs" style="position:absolute;width:1600px;height:130px;background:#0057B8"></div>
+    <img id="aCube" class="img" src="img/logo_cube.png" style="width:440px;left:320px;top:420px">
+    <img id="aWord" class="img" src="img/logo_word.png" style="width:880px;left:100px;top:1010px">
+    <div id="aLine" style="position:absolute;left:140px;top:1205px;width:800px;height:10px;background:#E30613;transform-origin:540px 0"></div>
+    <div id="aTag" class="t" style="top:1260px;font-size:62px;color:#0B2A7A">Техника для вашего дома</div>
+  </div>
+
+  <!-- B: ТОП-3 -->
+  <div id="B" class="scene">
+    <div id="bTop" class="t" style="top:560px;font-size:300px">Топ-3</div>
+    <div id="bFor" class="t" style="top:950px;font-size:112px">для вашего</div>
+    <div id="bHome" class="t" style="top:1090px;font-size:210px;color:#0B1E5B">дома</div>
+  </div>
+
+  <!-- C: телевизор -->
+  <div id="C" class="scene">
+    <div class="rays" id="cRays" style="width:1500px;height:1500px;left:-210px;top:140px"></div>
+    <div class="glow" id="cGlow" style="width:1100px;height:1100px;left:-10px;top:340px"></div>
+    <div class="t" id="cCat" style="top:130px;font-size:100px">Телевизор</div>
+    <div class="t" id="cName" style="top:255px;font-size:165px">Витязь 50"</div>
+    <div class="img" id="cProd" style="left:60px;top:560px;width:960px;height:606px">
+      <div id="cScreen" style="position:absolute;left:8px;top:8px;width:942px;height:519px;overflow:hidden;background:#000">
+        <div id="cScreenBg" style="position:absolute;left:-300px;top:-300px;width:1542px;height:1119px"></div>
+        <div id="c4k" style="position:absolute;left:0;top:115px;width:942px;text-align:center;font:400 230px Russo;color:#fff;text-shadow:0 0 40px rgba(255,255,255,.6)">4K</div>
+        <div id="cUhd" style="position:absolute;left:0;top:350px;width:942px;text-align:center;font:800 64px Mont;color:#fff;letter-spacing:14px">ULTRA HD</div>
+        <div id="cShine" style="position:absolute;top:-100px;width:160px;height:800px;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.35),rgba(255,255,255,0));transform:skewX(-20deg)"></div>
+      </div>
+      <img src="img/tv_cut.png" style="position:absolute;left:0;top:0;width:960px">
+    </div>
+    <div class="badge" id="cB0" style="top:1290px"><div class="ic">✓</div><div class="tx">Экран 50 дюймов (127 см)</div></div>
+    <div class="badge" id="cB1" style="top:1400px"><div class="ic">✓</div><div class="tx">Разрешение 4K Ultra HD</div></div>
+    <div class="badge" id="cB2" style="top:1510px"><div class="ic">✓</div><div class="tx">Smart TV · Салют ТВ</div></div>
+    <div class="badge" id="cB3" style="top:1620px"><div class="ic">✓</div><div class="tx">Яркий IPS-экран</div></div>
+  </div>
+
+  <!-- D: стиральная машина -->
+  <div id="D" class="scene">
+    <div class="rays" id="dRays" style="width:1500px;height:1500px;left:-210px;top:150px"></div>
+    <div class="glow" id="dGlow" style="width:1000px;height:1000px;left:40px;top:400px"></div>
+    <div class="t" id="dCat" style="top:120px;font-size:92px">Стиральная машина</div>
+    <div class="t" id="dName" style="top:225px;font-size:230px">LG</div>
+    <div class="t" id="dSub" style="top:462px;font:800 50px Mont;letter-spacing:6px">F2Y1HS3W</div>
+    <div class="img" id="dProd" style="left:282px;top:545px;width:516px;height:729px">
+      <img src="img/lg_cut.png" style="position:absolute;left:0;top:0;width:516px">
+      <div id="dDrum" style="position:absolute;left:131px;top:174px;width:254px;height:254px;border-radius:50%;
+        background:conic-gradient(rgba(255,255,255,0) 0deg,rgba(255,255,255,.55) 40deg,rgba(255,255,255,0) 90deg,rgba(120,200,255,.0) 180deg,rgba(255,255,255,.45) 220deg,rgba(255,255,255,0) 270deg);mix-blend-mode:screen"></div>
+    </div>
+    <div class="badge" id="dB0" style="top:1290px"><div class="ic">✓</div><div class="tx">Загрузка 7 кг</div></div>
+    <div class="badge" id="dB1" style="top:1400px"><div class="ic">✓</div><div class="tx">Отжим 1200 об/мин</div></div>
+    <div class="badge" id="dB2" style="top:1510px"><div class="ic">✓</div><div class="tx">Обработка паром Steam</div></div>
+    <div class="badge" id="dB3" style="top:1620px"><div class="ic">✓</div><div class="tx">Инвертор · прямой привод</div></div>
+  </div>
+
+  <!-- E: морозильный ларь -->
+  <div id="E" class="scene">
+    <div class="rays" id="eRays" style="width:1500px;height:1500px;left:-210px;top:150px"></div>
+    <div class="glow" id="eGlow" style="width:1100px;height:1100px;left:-10px;top:360px"></div>
+    <div class="t" id="eCat" style="top:130px;font-size:96px">Морозильный ларь</div>
+    <div class="t" id="eName" style="top:255px;font-size:165px">Бирюса 240</div>
+    <div class="img" id="eProd" style="left:90px;top:560px;width:900px;height:705px">
+      <img src="img/biryusa_cut.png" style="position:absolute;left:0;top:0;width:900px">
+      <div id="eFrost" style="position:absolute;left:0;top:0;width:900px;height:705px;
+        background:linear-gradient(115deg,rgba(255,255,255,0) 40%,rgba(200,240,255,.55) 50%,rgba(255,255,255,0) 60%);mix-blend-mode:screen"></div>
+    </div>
+    <div class="badge" id="eB0" style="top:1290px"><div class="ic">✓</div><div class="tx">Объём 220 литров</div></div>
+    <div class="badge" id="eB1" style="top:1400px"><div class="ic">✓</div><div class="tx">Заморозка до −18 °C</div></div>
+    <div class="badge" id="eB2" style="top:1510px"><div class="ic">✓</div><div class="tx">Глухая крышка, 1 корзина</div></div>
+    <div class="badge" id="eB3" style="top:1620px"><div class="ic">✓</div><div class="tx">Сделано в России</div></div>
+  </div>
+
+  <!-- F: призыв -->
+  <div id="F" class="scene">
+    <div id="fBandR" style="position:absolute;width:1600px;height:170px;background:#E30613"></div>
+    <div id="fBandB" style="position:absolute;width:1600px;height:110px;background:#0057B8"></div>
+    <div class="t" id="fWait" style="top:250px;font-size:180px;color:#E30613">Ждём вас!</div>
+    <img id="fLogo" class="img" src="img/logo_full.png" style="width:600px;left:240px;top:470px">
+    <div class="t" id="fAddr" style="top:1000px;font:900 84px Mont;color:#0B1E5B;text-transform:none">ул. Торговая, 3</div>
+    <div id="fPhone" style="position:absolute;left:50px;top:1170px;width:980px;height:200px;border-radius:100px;background:#E30613;
+        display:flex;align-items:center;justify-content:center;box-shadow:0 18px 40px rgba(227,6,19,.45)">
+      <span style="font:400 92px 'DejaVu Sans';color:#fff;margin-right:22px">☎</span>
+      <span style="font:400 104px Russo;color:#fff">(35366) 2-18-16</span>
+    </div>
+    <div class="t" id="fCall" style="top:1440px;font-size:74px;color:#0B1E5B">Звоните и приходите!</div>
+    <div class="t" id="fShop" style="top:1560px;font:700 50px Mont;color:#0057B8;text-transform:none">Магазин бытовой техники «Гамбит»</div>
+  </div>
+
+  <div id="footer">ГАМБИТ&nbsp;<b>•</b>&nbsp;ул. Торговая, 3&nbsp;<b>•</b>&nbsp;☎ (35366) 2-18-16</div>
+
+  <div id="w1" class="wipe" style="background:#E30613"></div>
+  <div id="w2" class="wipe" style="background:#0B1E5B"></div>
+  <div id="w3" class="wipe" style="background:#fff;width:120px"></div>
+  <div id="flash"></div>
+</div>
+
+<script>
+const C=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const P=(t,a,b)=>C((t-a)/(b-a));
+const L=(a,b,x)=>a+(b-a)*x;
+const back=x=>{const c1=1.9,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const expo=x=>x>=1?1:1-Math.pow(2,-10*x);
+const io=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const $=id=>document.getElementById(id);
+const BEAT=60/103.4;
+
+// ---- разбиение на буквы
+function letters(id){const el=$(id);const txt=el.textContent;el.textContent='';
+  const arr=[];for(const ch of txt){const s=document.createElement('span');s.className='l';
+    s.textContent=ch===' '?' ':ch;el.appendChild(s);arr.push(s)}el._l=arr;return el}
+function fit(id,max=1000){const el=$(id);let fs=parseFloat(getComputedStyle(el).fontSize);
+  const w=()=>{let s=0;for(const c of el.children)s+=c.getBoundingClientRect().width;return s||el.scrollWidth};
+  let guard=0;while(w()>max&&guard++<60){fs*=0.97;el.style.fontSize=fs+'px'}}
+function fitBadge(id){const tx=$(id).querySelector('.tx');let fs=46;while(tx.scrollWidth>760&&fs>30){fs-=1;tx.style.fontSize=fs+'px'}}
+
+const LETTER_IDS=['aTag','bTop','bFor','bHome','cCat','cName','dCat','dName','eCat','eName','fWait','fCall'];
+LETTER_IDS.forEach(letters);
+LETTER_IDS.forEach(id=>fit(id));
+['c','d','e'].forEach(p=>[0,1,2,3].forEach(i=>fitBadge(p+'B'+i)));
+
+// ---- удары для тряски камеры
+const IMPACTS=[];
+function impact(t0,amp=1){IMPACTS.push([t0,amp])}
+
+// буквы «впечатываются»: из большого масштаба в 1
+function slamLetters(id,t,t0,stag=.05,dur=.32,from=3.2,dir=0){
+  const ls=$(id)._l;ls.forEach((s,i)=>{const a=t0+i*stag;const p=P(t,a,a+dur);
+    if(t<a){s.style.opacity=0;return}
+    const e=expo(p);const sc=L(from,1,e);
+    const dy=dir?L(dir*220,0,back(p)):0;
+    s.style.opacity=C(p*4);
+    s.style.transform=`translateY(${dy}px) scale(${sc})`;
+    s.style.filter=p<1?`blur(${(1-e)*10}px)`:'none'})}
+function slideLetters(id,t,t0,stag=.03,dur=.4,dx=-700){
+  const ls=$(id)._l;ls.forEach((s,i)=>{const a=t0+i*stag;const p=P(t,a,a+dur);
+    s.style.opacity=t<a?0:C(p*3);
+    s.style.transform=`translateX(${L(dx,0,back(p))}px) skewX(${L(-25,0,expo(p))}deg)`})}
+function badge(id,t,t0,side){const el=$(id);const p=P(t,t0,t0+.45);
+  el.style.opacity=t<t0?0:C(p*3);
+  el.style.transform=`translateX(${L(side*1150,0,back(p))}px)`;
+  const ic=el.querySelector('.ic');const q=P(t,t0+.3,t0+.6);
+  ic.style.transform=`scale(${t<t0+.3?0:back(q)}) rotate(${L(-90,0,expo(q))}deg)`}
+function setT(id,{x=0,y=0,s=1,r=0,o=1,sx=null,sy=null}){const el=$(id);
+  el.style.opacity=o;el.style.transform=`translate(${x}px,${y}px) rotate(${r}deg) scale(${sx??s},${sy??s})`}
+
+// ---- сцены
+const S={A:[0,3.6],B:[3.6,5.9],C:[5.9,16.3],D:[16.3,26.2],E:[26.2,34.4],F:[34.4,40.1]};
+const CUTS=[3.6,5.9,16.3,26.2,34.4];
+
+// регистрация ударов
+impact(.7,.8);impact(.95,1.2);
+impact(3.75,1.3);impact(4.35,.7);impact(4.7,1.1);
+[S.C[0],S.D[0],S.E[0]].forEach(s=>{impact(s+.15,1);impact(s+.55,1.1);impact(s+1.15,.8)});
+impact(34.6,1.1);impact(35.45,.9);impact(36.75,1.4);
+
+// снежинки (детерминированно)
+let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const FL=[];for(let i=0;i<46;i++){const f=document.createElement('div');f.className='flake';f.textContent=rnd()<.5?'❄':'•';
+  $('snow').appendChild(f);FL.push({el:f,x:rnd()*1080,sp:80+rnd()*160,ph:rnd()*20,sz:.4+rnd()*1.1,sw:20+rnd()*50})}
+
+function product(pre,t,s,side,{nameT=.5,prodT=.9,badgeT=[2.3,3.5,4.7,5.9],sub=false}){
+  slamLetters(pre+'Cat',t,s+.1,.035,.3,3.2);
+  slamLetters(pre+'Name',t,s+nameT,.06,.34,3.6);
+  if(sub){const p=P(t,s+nameT+.5,s+nameT+.9);setT('dSub',{o:t<s+nameT+.5?0:p,y:L(40,0,expo(p))})}
+  const p=P(t,s+prodT,s+prodT+.7);const e=back(p);
+  const fl=Math.sin((t-s)*2.4)*10;
+  const el=$(pre+'Prod');
+  el.style.opacity=t<s+prodT?0:C(p*3);
+  el.style.transform=`translate(${L(side*1100,0,e)}px,${fl}px) rotate(${L(side*-14,0,expo(p))}deg) scale(${L(.45,1,e)})`;
+  badgeT.forEach((bt,i)=>badge(pre+'B'+i,t,s+bt,i%2?1:-1));
+  $(pre+'Rays').style.transform=`rotate(${(t-s)*14}deg) scale(${1+.04*Math.sin(t*6)})`;
+  $(pre+'Glow').style.opacity=.55+.25*Math.sin((t-s)*Math.PI*2/BEAT/2);
+}
+
+function bands(r,b,t,t0,yr=120,yb=1640){ // фирменные диагональные полосы
+  const p=io(P(t,t0,t0+.8));
+  $(r).style.transform=`translate(${L(-1700,-260,p)+((t-t0)*30)}px,${yr}px) rotate(-18deg)`;
+  $(b).style.transform=`translate(${L(1200,-80,p)-((t-t0)*30)}px,${yb}px) rotate(-18deg)`;
+}
+
+function render(t){
+  // какая сцена
+  for(const k in S){$(k).style.display=(t>=S[k][0]&&t<S[k][1])?'block':'none'}
+  const sc=Object.keys(S).find(k=>t>=S[k][0]&&t<S[k][1])||'F';
+
+  // фон
+  const BG={A:'#ffffff',B:'linear-gradient(160deg,#ff1a2b,#b0000e)',
+    C:'linear-gradient(170deg,#0a1a5c,#0057B8 70%,#1a7de0)',D:'linear-gradient(165deg,#ff2433,#c3000f 60%,#7d0009)',
+    E:'linear-gradient(170deg,#03263f,#0a6fae 60%,#43b9f0)',F:'#ffffff'};
+  $('bg').style.background=BG[sc];
+  const dark=sc!=='A'&&sc!=='F';
+  $('stripes').style.background=dark?'repeating-linear-gradient(-35deg,rgba(255,255,255,.06) 0 40px,rgba(255,255,255,0) 40px 120px)':
+    'repeating-linear-gradient(-35deg,rgba(0,87,184,.05) 0 40px,rgba(0,0,0,0) 40px 120px)';
+  $('stripes').style.backgroundPosition=`${t*90}px 0`;
+
+  // снег только в сцене морозильника
+  $('snow').style.display=sc==='E'?'block':'none';
+  if(sc==='E'){const lt=t-S.E[0];FL.forEach(f=>{const y=((f.ph*97+lt*f.sp)%2100)-100;
+    f.el.style.transform=`translate(${f.x+Math.sin(lt*1.3+f.ph)*f.sw}px,${y}px) scale(${f.sz}) rotate(${lt*60+f.ph*30}deg)`;
+    f.el.style.opacity=.75})}
+
+  // ---- A
+  if(sc==='A'){bands('bandR','bandB',t,0);
+    const p=P(t,.1,.75);setT('aCube',{o:t<.1?0:C(p*2),y:L(-900,0,back(p)),r:L(-200,0,expo(p)),s:L(.4,1,back(p))*(1+.025*Math.sin(t*5))});
+    const q=P(t,.8,1.15);setT('aWord',{o:t<.8?0:C(q*3),sx:L(2.6,1,back(q)),sy:L(.2,1,back(q))});
+    const lp=P(t,1.2,1.6);$('aLine').style.transform=`scaleX(${expo(lp)})`;
+    slideLetters('aTag',t,1.35,.03,.4,-800);
+    const push=io(P(t,2.6,3.6));$('A').style.transform=`scale(${1+push*.12})`;
+  }
+  // ---- B
+  if(sc==='B'){slamLetters('bTop',t,3.7,.07,.3,3.4);
+    slideLetters('bFor',t,4.25,.025,.35,-900);
+    slamLetters('bHome',t,4.6,.06,.3,3);
+    $('B').style.transform=`scale(${1+P(t,5.0,5.9)*.08})`;}
+  // ---- продукты
+  if(sc==='C'){const s=S.C[0];product('c',t,s,1,{});
+    const lt=t-s;$('cScreenBg').style.background=`conic-gradient(from ${lt*80}deg at 50% 50%,#ff2d55,#ffcc00,#00e0a4,#00a3ff,#7a3cff,#ff2d55)`;
+    $('cScreenBg').style.transform=`rotate(${lt*25}deg) scale(1.2)`;
+    const k=P(t,s+1.4,s+1.8);$('c4k').style.transform=`scale(${t<s+1.4?0:back(k)})`;
+    const u=P(t,s+1.7,s+2.1);$('cUhd').style.opacity=t<s+1.7?0:u;$('cUhd').style.letterSpacing=L(60,14,expo(u))+'px';
+    $('cShine').style.left=(((lt*420)%1500)-300)+'px';}
+  if(sc==='D'){const s=S.D[0];product('d',t,s,-1,{sub:true});
+    $('dDrum').style.transform=`rotate(${(t-s)*540}deg)`;$('dDrum').style.opacity=t<s+1.4?0:.9;}
+  if(sc==='E'){const s=S.E[0];product('e',t,s,1,{badgeT:[2.0,3.0,4.0,5.0]});
+    const lt=t-s;$('eFrost').style.backgroundPosition='0 0';$('eFrost').style.transform=`translateX(${((lt*500)%2200)-1100}px)`;}
+  // ---- F
+  if(sc==='F'){bands('fBandR','fBandB',t,34.4,-150,1830);
+    slamLetters('fWait',t,34.55,.06,.3,3.4);
+    const p=P(t,35.2,35.9);setT('fLogo',{o:t<35.2?0:C(p*3),s:L(0,1,back(p)),r:L(-30,0,expo(p))});
+    const a=P(t,36.0,36.5);setT('fAddr',{o:t<36?0:C(a*3),x:L(-1100,0,back(a))});
+    const ph=P(t,36.6,36.95);const beat=Math.pow(Math.abs(Math.sin((t-36.6)*Math.PI/BEAT)),8);
+    setT('fPhone',{o:t<36.6?0:C(ph*3),s:L(2.4,1,expo(ph))*(t>37?1+.035*beat:1)});
+    slamLetters('fCall',t,37.3,.035,.28,2.6);
+    const sh=P(t,38.2,38.7);setT('fShop',{o:t<38.2?0:sh,y:L(40,0,expo(sh))});
+  }
+
+  // футер
+  const fShow=t>=4.0&&t<S.F[0];const fp=P(t,4.0,4.4);
+  $('footer').style.display=fShow?'flex':'none';$('footer').style.transform=`translateY(${L(120,0,expo(fp))}px)`;
+
+  // шторки между сценами
+  const ws=['w1','w2','w3'];ws.forEach((w,i)=>{$(w).style.display='none'});
+  for(const T of CUTS){if(t>T-.42&&t<T+.42){ws.forEach((w,i)=>{const d=[0,.05,.1][i];
+      const p=io(P(t,T-.4+d,T+.4+d));const width=i===2?120:1700;
+      const x=L(-width-600,1080+600,p)-(i===2?0:0);
+      $(w).style.display='block';$(w).style.transform=`translateX(${x}px) skewX(-16deg)`})}}
+
+  // тряска камеры и вспышка
+  let sx=0,sy=0,rot=0,fl=0;
+  for(const [a,amp] of IMPACTS){const d=t-a;if(d>=0&&d<.45){const k=Math.exp(-d*14)*amp;
+    sx+=Math.sin(d*95)*22*k;sy+=Math.cos(d*80)*16*k;rot+=Math.sin(d*70)*.8*k}}
+  for(const a of [.95,3.75,36.75]){const d=t-a;if(d>=0&&d<.25)fl=Math.max(fl,(1-d/.25)*.55)}
+  $('stage').style.transform=`translate(${sx}px,${sy}px) rotate(${rot}deg)`;
+  $('flash').style.opacity=fl;
+}
+window.render=render;
+window.ready=Promise.all([document.fonts.load('100px Russo'),document.fonts.load('800 46px Mont'),document.fonts.load('900 84px Mont')]).then(()=>document.fonts.ready).then(()=>{document.querySelectorAll('.scene').forEach(e=>e.style.display='block');LETTER_IDS.forEach(id=>fit(id,960));['c','d','e'].forEach(p=>[0,1,2,3].forEach(i=>fitBadge(p+'B'+i)));render(0);return true});
+render(0);
+</script>
+</body></html>
