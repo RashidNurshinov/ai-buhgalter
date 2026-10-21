@@ -4,6 +4,7 @@
 `render.js` (Playwright/Chromium) снимает 30 кадров/с, ffmpeg собирает mp4 с музыкой.
 
 ```bash
+# ad_template.html — универсальный шаблон: товары задаются списком PRODUCTS (любое число сцен, фото-вырезка или интерьер)
 node render.js preview 2.4,13,39   # контрольные кадры prev_*.jpg
 node render.js full                 # все кадры в frames/
 ffmpeg -framerate 30 -i frames/%05d.jpg -i music40.m4a -map 0:v -map 1:a \

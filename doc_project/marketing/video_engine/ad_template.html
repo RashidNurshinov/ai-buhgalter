@@ -1,0 +1,198 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Russo;src:url(fonts/RussoOne.ttf)}
+@font-face{font-family:Mont;src:url(fonts/Montserrat.ttf);font-weight:100 900}
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#000}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden;transform-origin:540px 960px}
+.layer{position:absolute;left:0;top:0;width:1080px;height:1920px}
+.scene{position:absolute;left:0;top:0;width:1080px;height:1920px;display:none}
+.t{position:absolute;left:0;width:1080px;text-align:center;font-family:Russo;color:#fff;text-transform:uppercase;white-space:nowrap;line-height:1}
+.l{display:inline-block;will-change:transform,opacity}
+.img{position:absolute;will-change:transform}
+.badge{position:absolute;left:90px;width:900px;height:94px;background:#fff;border-radius:16px;display:flex;align-items:center;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.badge .ic{width:94px;height:94px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font:700 54px "DejaVu Sans"}
+.badge .tx{padding-left:28px;font:800 46px Mont;color:#0B1E5B;white-space:nowrap}
+#footer{position:absolute;left:0;top:1816px;width:1080px;height:104px;background:rgba(5,12,40,.55);display:flex;align-items:center;justify-content:center;font:700 36px Mont;color:#fff}
+#footer b{color:#ff3341}
+.wipe{position:absolute;top:-100px;height:2120px;width:1700px}
+#flash{position:absolute;left:0;top:0;width:1080px;height:1920px;background:#fff;opacity:0}
+.rays{position:absolute;width:1500px;height:1500px;left:-210px;top:150px;border-radius:50%;background:repeating-conic-gradient(rgba(255,255,255,.13) 0 9deg,rgba(255,255,255,0) 9deg 22deg)}
+.glow{position:absolute;width:1100px;height:1100px;left:-10px;top:360px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.55),rgba(255,255,255,0) 65%)}
+.flake{position:absolute;color:#fff;font:400 40px "DejaVu Sans"}
+.frame{position:absolute;overflow:hidden;border-radius:28px;border:8px solid #fff;box-shadow:0 25px 60px rgba(0,0,0,.5)}
+.frame img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover}
+.sweep{position:absolute;left:0;top:0;width:100%;height:100%;background:linear-gradient(115deg,rgba(255,255,255,0) 40%,rgba(255,255,255,.45) 50%,rgba(255,255,255,0) 60%);mix-blend-mode:screen}
+</style></head>
+<body>
+<div id="stage">
+  <div id="bg" class="layer"></div>
+  <div id="stripes" class="layer"></div>
+  <div id="snow" class="layer"></div>
+
+  <div id="A" class="scene">
+    <div id="bandR" style="position:absolute;width:1600px;height:200px;background:#E30613"></div>
+    <div id="bandB" style="position:absolute;width:1600px;height:130px;background:#0057B8"></div>
+    <img id="aCube" class="img" src="img/logo_cube.png" style="width:440px;left:320px;top:420px">
+    <img id="aWord" class="img" src="img/logo_word.png" style="width:880px;left:100px;top:1010px">
+    <div id="aLine" style="position:absolute;left:140px;top:1205px;width:800px;height:10px;background:#E30613;transform-origin:540px 0"></div>
+    <div id="aTag" class="t" style="top:1260px;font-size:62px;color:#0B2A7A">Техника и мебель для дома</div>
+  </div>
+
+  <div id="B" class="scene">
+    <div id="bTop" class="t" style="top:560px;font-size:250px">Новинки</div>
+    <div id="bFor" class="t" style="top:900px;font-size:120px">уже в</div>
+    <div id="bHome" class="t" style="top:1060px;font-size:210px;color:#0B1E5B">Гамбите</div>
+  </div>
+
+  <div id="P"></div>
+
+  <div id="F" class="scene">
+    <div id="fBandR" style="position:absolute;width:1600px;height:170px;background:#E30613"></div>
+    <div id="fBandB" style="position:absolute;width:1600px;height:110px;background:#0057B8"></div>
+    <div class="t" id="fWait" style="top:250px;font-size:180px;color:#E30613">Ждём вас!</div>
+    <img id="fLogo" class="img" src="img/logo_full.png" style="width:600px;left:240px;top:470px">
+    <div class="t" id="fAddr" style="top:1000px;font:900 84px Mont;color:#0B1E5B;text-transform:none">ул. Торговая, 3</div>
+    <div id="fPhone" style="position:absolute;left:50px;top:1170px;width:980px;height:200px;border-radius:100px;background:#E30613;display:flex;align-items:center;justify-content:center;box-shadow:0 18px 40px rgba(227,6,19,.45)">
+      <span style="font:400 92px 'DejaVu Sans';color:#fff;margin-right:22px">☎</span>
+      <span style="font:400 104px Russo;color:#fff">(35366) 2-18-16</span>
+    </div>
+    <div class="t" id="fCall" style="top:1440px;font-size:74px;color:#0B1E5B">Звоните и приходите!</div>
+    <div class="t" id="fShop" style="top:1560px;font:700 50px Mont;color:#0057B8;text-transform:none">«Гамбит» — техника и мебель</div>
+  </div>
+
+  <div id="footer">ГАМБИТ&nbsp;<b>•</b>&nbsp;ул. Торговая, 3&nbsp;<b>•</b>&nbsp;☎ (35366) 2-18-16</div>
+  <div id="w1" class="wipe" style="background:#E30613"></div>
+  <div id="w2" class="wipe" style="background:#0B1E5B"></div>
+  <div id="w3" class="wipe" style="background:#fff;width:120px"></div>
+  <div id="flash"></div>
+</div>
+
+<script>
+const C=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)), P=(t,a,b)=>C((t-a)/(b-a)), L=(a,b,x)=>a+(b-a)*x;
+const back=x=>{const c1=1.9,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const expo=x=>x>=1?1:1-Math.pow(2,-10*x), io=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const $=id=>document.getElementById(id), BEAT=60/103.4;
+
+// ---- товары: правится только этот список
+const PRODUCTS=[
+ {id:'p1',t:[5.9,15.3],bg:'linear-gradient(170deg,#04203f,#0b6aa8 60%,#4cc3f2)',snow:true,side:1,
+  cat:'Холодильник Side-by-Side',name:'LERAN SBS 300',img:'img/sbs_cut.png',w:420,h:770,
+  specs:['Объём 436 литров','Полный No Frost','Электронное управление','Ширина 90 см, класс A+'],fx:'sweep'},
+ {id:'p2',t:[15.3,24.7],bg:'linear-gradient(165deg,#ff2433,#c3000f 60%,#7d0009)',snow:true,side:-1,
+  cat:'Холодильник',name:'POZIS RK-149',img:'img/pozis_cut.png',w:270,h:760,
+  specs:['Объём 314 литров','Высота 196 см','Класс энергии A+','Сделано в России'],fx:'sweep'},
+ {id:'p3',t:[24.7,34.1],bg:'linear-gradient(170deg,#0a1a5c,#0057B8 70%,#1a7de0)',side:1,
+  cat:'Стирально-сушильная машина',name:'CANDY NOVA',sub:'C33D4 474MBBW',img:'img/candy_cut.png',w:490,h:690,
+  specs:['Стирка 7 кг + сушка','Отжим 1400 об/мин','Обработка паром','12 программ'],fx:'drum',drum:[52,138,376]},
+ {id:'p4',t:[34.1,45.1],bg:'linear-gradient(170deg,#2b1d14,#6e4c33 60%,#b08a63)',side:-1,
+  cat:'Спальня «Стокгольм»',name:'Империал',photos:['img/stk_set6_0.jpg','img/stk_set7_0.jpg'],w:960,h:660,
+  specs:['Кровать 160×200 с подъёмником','LED-подсветка кровати и тумб','Шкаф 3-дверный с зеркалом','Комод, 2 тумбы — стиль лофт'],fx:'kb'},
+ {id:'p5',t:[45.1,54.0],bg:'linear-gradient(170deg,#0b3b3a,#16706c 60%,#5bb7a8)',side:1,
+  cat:'Стенка для гостиной',name:'Сабина',img:'img/sabina_cut.png',w:600,h:710,
+  specs:['Размер 200 × 220 см','12 полок для хранения','Фасады ЛДСП и стекло','Цвет «ясень анкор светлый»'],fx:'sweep',
+  badgeT:[2.0,3.1,4.2,5.3]},
+];
+const S={A:[0,3.6],B:[3.6,5.9]};PRODUCTS.forEach(p=>S[p.id]=p.t);S.F=[54.0,60.2];
+const CUTS=[3.6,5.9,...PRODUCTS.slice(1).map(p=>p.t[0]),54.0];
+
+// построение сцен товаров
+const host=$('P');
+for(const p of PRODUCTS){
+  const top=560, left=(1080-p.w)/2;
+  let prod;
+  if(p.photos){prod=`<div class="frame img" id="${p.id}Prod" style="left:${left}px;top:${top}px;width:${p.w}px;height:${p.h}px">`+
+      p.photos.map((s,i)=>`<img id="${p.id}Ph${i}" src="${s}">`).join('')+`<div class="sweep" id="${p.id}Sw"></div></div>`}
+  else{prod=`<div class="img" id="${p.id}Prod" style="left:${left}px;top:${top+(690-p.h)/2}px;width:${p.w}px;height:${p.h}px">
+      <img src="${p.img}" style="position:absolute;left:0;top:0;width:${p.w}px;height:${p.h}px;object-fit:contain">`+
+      (p.fx==='drum'?`<div id="${p.id}Drum" style="position:absolute;left:${p.drum[0]}px;top:${p.drum[1]}px;width:${p.drum[2]}px;height:${p.drum[2]}px;border-radius:50%;background:conic-gradient(rgba(255,255,255,0) 0deg,rgba(255,255,255,.5) 40deg,rgba(255,255,255,0) 90deg,rgba(255,255,255,0) 180deg,rgba(150,210,255,.45) 220deg,rgba(255,255,255,0) 270deg);mix-blend-mode:screen"></div>`:'')+
+      (p.fx==='sweep'?`<div class="sweep" id="${p.id}Sw" style="-webkit-mask:url(${p.img}) center/contain no-repeat;mask:url(${p.img}) center/contain no-repeat"></div>`:'')+`</div>`}
+  host.insertAdjacentHTML('beforeend',`<div id="${p.id}" class="scene">
+    <div class="rays" id="${p.id}Rays"></div><div class="glow" id="${p.id}Glow"></div>
+    <div class="t" id="${p.id}Cat" style="top:130px;font-size:96px">${p.cat}</div>
+    <div class="t" id="${p.id}Name" style="top:255px;font-size:${p.sub?190:165}px">${p.name}</div>
+    ${p.sub?`<div class="t" id="${p.id}Sub" style="top:462px;font:800 50px Mont;letter-spacing:6px">${p.sub}</div>`:''}
+    ${prod}
+    ${p.specs.map((s,i)=>`<div class="badge" id="${p.id}B${i}" style="top:${1290+i*110}px"><div class="ic" style="background:${i%2?'#0057B8':'#E30613'}">✓</div><div class="tx">${s}</div></div>`).join('')}
+  </div>`);
+}
+
+function letters(id){const el=$(id);const txt=el.textContent;el.textContent='';const arr=[];
+  for(const ch of txt){const s=document.createElement('span');s.className='l';s.textContent=ch===' '?' ':ch;el.appendChild(s);arr.push(s)}el._l=arr}
+function fit(id,max=960){const el=$(id);let fs=parseFloat(getComputedStyle(el).fontSize);
+  const w=()=>{let s=0;for(const c of el.children)s+=c.getBoundingClientRect().width;return s};let g=0;while(w()>max&&g++<80){fs*=.97;el.style.fontSize=fs+'px'}}
+function fitBadge(id){const tx=$(id).querySelector('.tx');let fs=46;while(tx.scrollWidth>760&&fs>30){fs-=1;tx.style.fontSize=fs+'px'}}
+const LETTER_IDS=['aTag','bTop','bFor','bHome','fWait','fCall',...PRODUCTS.flatMap(p=>[p.id+'Cat',p.id+'Name'])];
+LETTER_IDS.forEach(letters);
+
+const IMPACTS=[];const impact=(t,a=1)=>IMPACTS.push([t,a]);
+impact(.7,.8);impact(.95,1.2);impact(3.75,1.3);impact(4.35,.7);impact(4.7,1.1);
+PRODUCTS.forEach(p=>{const s=p.t[0];impact(s+.15,1);impact(s+.55,1.1);impact(s+1.15,.8)});
+impact(54.2,1.1);impact(55.05,.9);impact(56.35,1.4);
+
+let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;const FL=[];
+for(let i=0;i<46;i++){const f=document.createElement('div');f.className='flake';f.textContent=rnd()<.5?'❄':'•';$('snow').appendChild(f);
+  FL.push({el:f,x:rnd()*1080,sp:80+rnd()*160,ph:rnd()*20,sz:.4+rnd()*1.1,sw:20+rnd()*50})}
+
+function slamLetters(id,t,t0,stag=.05,dur=.32,from=3.2){$(id)._l.forEach((s,i)=>{const a=t0+i*stag,p=P(t,a,a+dur);
+  if(t<a){s.style.opacity=0;return}const e=expo(p);s.style.opacity=C(p*4);s.style.transform=`scale(${L(from,1,e)})`;s.style.filter=p<1?`blur(${(1-e)*10}px)`:'none'})}
+function slideLetters(id,t,t0,stag=.03,dur=.4,dx=-700){$(id)._l.forEach((s,i)=>{const a=t0+i*stag,p=P(t,a,a+dur);
+  s.style.opacity=t<a?0:C(p*3);s.style.transform=`translateX(${L(dx,0,back(p))}px) skewX(${L(-25,0,expo(p))}deg)`})}
+function badge(id,t,t0,side){const el=$(id),p=P(t,t0,t0+.45);el.style.opacity=t<t0?0:C(p*3);el.style.transform=`translateX(${L(side*1150,0,back(p))}px)`;
+  const ic=el.querySelector('.ic'),q=P(t,t0+.3,t0+.6);ic.style.transform=`scale(${t<t0+.3?0:back(q)}) rotate(${L(-90,0,expo(q))}deg)`}
+function setT(id,{x=0,y=0,s=1,r=0,o=1,sx=null,sy=null}){const el=$(id);el.style.opacity=o;el.style.transform=`translate(${x}px,${y}px) rotate(${r}deg) scale(${sx??s},${sy??s})`}
+function bands(r,b,t,t0,yr=120,yb=1640){const p=io(P(t,t0,t0+.8));
+  $(r).style.transform=`translate(${L(-1700,-260,p)+(t-t0)*30}px,${yr}px) rotate(-18deg)`;$(b).style.transform=`translate(${L(1200,-80,p)-(t-t0)*30}px,${yb}px) rotate(-18deg)`}
+
+function product(p,t){const s=p.t[0],id=p.id,lt=t-s,bt=p.badgeT||[2.3,3.5,4.7,5.9];
+  slamLetters(id+'Cat',t,s+.1,.03,.3,3.2);slamLetters(id+'Name',t,s+.5,.06,.34,3.6);
+  if(p.sub){const q=P(t,s+1,s+1.4);setT(id+'Sub',{o:t<s+1?0:q,y:L(40,0,expo(q))})}
+  const q=P(t,s+.9,s+1.6),e=back(q),el=$(id+'Prod');el.style.opacity=t<s+.9?0:C(q*3);
+  el.style.transform=`translate(${L(p.side*1100,0,e)}px,${Math.sin(lt*2.4)*(p.photos?4:10)}px) rotate(${L(p.side*-14,0,expo(q))}deg) scale(${L(.45,1,e)})`;
+  bt.forEach((b,i)=>badge(id+'B'+i,t,s+b,i%2?1:-1));
+  $(id+'Rays').style.transform=`rotate(${lt*14}deg) scale(${1+.04*Math.sin(t*6)})`;$(id+'Glow').style.opacity=.55+.25*Math.sin(lt*Math.PI/BEAT);
+  if(p.fx==='drum'){const d=$(id+'Drum');d.style.transform=`rotate(${lt*540}deg)`;d.style.opacity=t<s+1.4?0:.9}
+  if($(id+'Sw'))$(id+'Sw').style.transform=`translateX(${((lt*500)%2200)-1100}px)`;
+  if(p.photos){const dur=p.t[1]-s,sw=P(t,s+dur*.55,s+dur*.55+.6);
+    p.photos.forEach((_,i)=>{const im=$(id+'Ph'+i);im.style.opacity=i===0?1:sw;
+      im.style.transform=`scale(${1.04+.1*P(t,s,p.t[1])}) translateX(${(i?-1:1)*20*P(t,s,p.t[1])}px)`})}
+}
+
+function render(t){
+  for(const k in S)$(k).style.display=(t>=S[k][0]&&t<S[k][1])?'block':'none';
+  const sc=Object.keys(S).find(k=>t>=S[k][0]&&t<S[k][1])||'F', pr=PRODUCTS.find(p=>p.id===sc);
+  $('bg').style.background=sc==='A'||sc==='F'?'#fff':sc==='B'?'linear-gradient(160deg,#ff1a2b,#b0000e)':pr.bg;
+  const dark=sc!=='A'&&sc!=='F';
+  $('stripes').style.background=dark?'repeating-linear-gradient(-35deg,rgba(255,255,255,.06) 0 40px,rgba(255,255,255,0) 40px 120px)':'repeating-linear-gradient(-35deg,rgba(0,87,184,.05) 0 40px,rgba(0,0,0,0) 40px 120px)';
+  $('stripes').style.backgroundPosition=`${t*90}px 0`;
+  const snow=pr&&pr.snow;$('snow').style.display=snow?'block':'none';
+  if(snow){const lt=t-pr.t[0];FL.forEach(f=>{const y=((f.ph*97+lt*f.sp)%2100)-100;f.el.style.transform=`translate(${f.x+Math.sin(lt*1.3+f.ph)*f.sw}px,${y}px) scale(${f.sz}) rotate(${lt*60+f.ph*30}deg)`;f.el.style.opacity=.7})}
+
+  if(sc==='A'){bands('bandR','bandB',t,0);const p=P(t,.1,.75);setT('aCube',{o:t<.1?0:C(p*2),y:L(-900,0,back(p)),r:L(-200,0,expo(p)),s:L(.4,1,back(p))*(1+.025*Math.sin(t*5))});
+    const q=P(t,.8,1.15);setT('aWord',{o:t<.8?0:C(q*3),sx:L(2.6,1,back(q)),sy:L(.2,1,back(q))});$('aLine').style.transform=`scaleX(${expo(P(t,1.2,1.6))})`;
+    slideLetters('aTag',t,1.35,.03,.4,-800);$('A').style.transform=`scale(${1+io(P(t,2.6,3.6))*.12})`}
+  if(sc==='B'){slamLetters('bTop',t,3.7,.06,.3,3.4);slideLetters('bFor',t,4.25,.04,.35,-900);slamLetters('bHome',t,4.6,.05,.3,3);$('B').style.transform=`scale(${1+P(t,5.0,5.9)*.08})`}
+  if(pr)product(pr,t);
+  if(sc==='F'){const T=54.0;bands('fBandR','fBandB',t,T,-150,1830);slamLetters('fWait',t,T+.15,.06,.3,3.4);
+    const p=P(t,T+.8,T+1.5);setT('fLogo',{o:t<T+.8?0:C(p*3),s:L(0,1,back(p)),r:L(-30,0,expo(p))});
+    const a=P(t,T+1.6,T+2.1);setT('fAddr',{o:t<T+1.6?0:C(a*3),x:L(-1100,0,back(a))});
+    const ph=P(t,T+2.2,T+2.55),beat=Math.pow(Math.abs(Math.sin((t-T-2.2)*Math.PI/BEAT)),8);
+    setT('fPhone',{o:t<T+2.2?0:C(ph*3),s:L(2.4,1,expo(ph))*(t>T+2.6?1+.035*beat:1)});
+    slamLetters('fCall',t,T+2.9,.035,.28,2.6);const sh=P(t,T+3.8,T+4.3);setT('fShop',{o:t<T+3.8?0:sh,y:L(40,0,expo(sh))})}
+
+  $('footer').style.display=t>=4&&t<S.F[0]?'flex':'none';$('footer').style.transform=`translateY(${L(120,0,expo(P(t,4,4.4)))}px)`;
+  ['w1','w2','w3'].forEach(w=>$(w).style.display='none');
+  for(const T of CUTS)if(t>T-.42&&t<T+.42)['w1','w2','w3'].forEach((w,i)=>{const p=io(P(t,T-.4+[0,.05,.1][i],T+.4+[0,.05,.1][i])),wd=i===2?120:1700;
+    $(w).style.display='block';$(w).style.transform=`translateX(${L(-wd-600,1680,p)}px) skewX(-16deg)`});
+  let sx=0,sy=0,rot=0,fl=0;
+  for(const [a,amp] of IMPACTS){const d=t-a;if(d>=0&&d<.45){const k=Math.exp(-d*14)*amp;sx+=Math.sin(d*95)*22*k;sy+=Math.cos(d*80)*16*k;rot+=Math.sin(d*70)*.8*k}}
+  for(const a of [.95,3.75,56.35]){const d=t-a;if(d>=0&&d<.25)fl=Math.max(fl,(1-d/.25)*.55)}
+  $('stage').style.transform=`translate(${sx}px,${sy}px) rotate(${rot}deg)`;$('flash').style.opacity=fl;
+}
+window.render=render;
+window.ready=Promise.all([document.fonts.load('100px Russo'),document.fonts.load('800 46px Mont'),document.fonts.load('900 84px Mont')])
+ .then(()=>document.fonts.ready).then(()=>{document.querySelectorAll('.scene').forEach(e=>e.style.display='block');
+  LETTER_IDS.forEach(id=>fit(id));PRODUCTS.forEach(p=>[0,1,2,3].forEach(i=>fitBadge(p.id+'B'+i)));render(0);return true});
+render(0);
+</script>
+</body></html>
