@@ -4,7 +4,7 @@
 
 ```
 cd voice && python3 voice.py gem google/gemini-3.8-flash-tts Fenrir pcm   # дёшево, ~1 ₽/ролик
-python3 voice.py el elevenlabs/eleven-v3 Adam mp3                        # дороже, ~5 ₽/ролик
+# выбран Gemini Fenrir; ударения — знак U+0301 после гласной: Гамби́т
 ```
 Тексты и тайминги сцен — список `SEG` в `voice.py` (тайминги из `ad_template.html`).
 Результат `<name>_voice.wav` (60 с) сводится с роликом, музыка приглушается под голос:

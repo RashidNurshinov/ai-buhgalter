@@ -128,7 +128,8 @@
 
 ## 🎙️ Озвучка (2026-10-22)
 - Ролик 22.10 озвучен в двух вариантах: `output/gambit_ad_2026-10-22_hity_60s_voice_gem.mp4` (Gemini 3.8 Flash TTS, голос Fenrir)
-  и `..._voice_el.mp4` (ElevenLabs v3, голос Adam). Музыка приглушается под голос (sidechain). @boss выбирает голос.
+  и `..._voice_el.mp4` (ElevenLabs v3, голос Adam). Музыка приглушается под голос (sidechain). @boss ВЫБРАЛ Gemini Fenrir (ElevenLabs-вариант удалён).
+- Ударения задавать явно знаком U+0301 после гласной: «Гамби́т» (не «гАмбит»). При ускорении atempo ставить ДО adelay (иначе сцены накладываются).
 - Скрипты: `video_engine/voice/` (tts.py, voice.py, README). Нюансы RouterAI: соединение иногда рвётся — ретраи;
   fish-audio и qwen требуют voice-id; английский префикс-инструкция в тексте Gemini зачитывается — стиль только через provider.options.
 - **Доставка роликов @boss — через MAX-бота** (env `MAX_BOT_TOKEN`, бот «Гамбит+Гипремаркетмбели»), чат @boss: chat_id `122272011`.
