@@ -23,6 +23,9 @@ html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#000}
 .frame{position:absolute;overflow:hidden;border-radius:28px;border:8px solid #fff;box-shadow:0 25px 60px rgba(0,0,0,.5)}
 .frame img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover}
 .sweep{position:absolute;left:0;top:0;width:100%;height:100%;background:linear-gradient(115deg,rgba(255,255,255,0) 40%,rgba(255,255,255,.45) 50%,rgba(255,255,255,0) 60%);mix-blend-mode:screen}
+.price{position:absolute;left:600px;top:640px;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe14d,#ffb800 60%,#ff8a00);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 20px 50px rgba(0,0,0,.45);border:10px solid #fff}
+.price .pr1{font:900 44px Mont;color:#7a0010;letter-spacing:6px}
+.price .pr2{font:400 84px Russo;color:#c3000f;white-space:nowrap;line-height:1.05}
 </style></head>
 <body>
 <div id="stage">
@@ -40,8 +43,8 @@ html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#000}
   </div>
 
   <div id="B" class="scene">
-    <div id="bTop" class="t" style="top:560px;font-size:250px">Новинки</div>
-    <div id="bFor" class="t" style="top:900px;font-size:120px">уже в</div>
+    <div id="bTop" class="t" style="top:560px;font-size:260px">Хиты</div>
+    <div id="bFor" class="t" style="top:900px;font-size:110px">и новинки в</div>
     <div id="bHome" class="t" style="top:1060px;font-size:210px;color:#0B1E5B">Гамбите</div>
   </div>
 
@@ -76,22 +79,21 @@ const $=id=>document.getElementById(id), BEAT=60/103.4;
 
 // ---- товары: правится только этот список
 const PRODUCTS=[
- {id:'p1',t:[5.9,15.3],bg:'linear-gradient(170deg,#04203f,#0b6aa8 60%,#4cc3f2)',snow:true,side:1,
-  cat:'Холодильник Side-by-Side',name:'LERAN SBS 300',img:'img/sbs_cut.png',w:420,h:770,
-  specs:['Объём 436 литров','Полный No Frost','Электронное управление','Ширина 90 см, класс A+'],fx:'sweep'},
- {id:'p2',t:[15.3,24.7],bg:'linear-gradient(165deg,#ff2433,#c3000f 60%,#7d0009)',snow:true,side:-1,
-  cat:'Холодильник',name:'POZIS RK-149',img:'img/pozis_cut.png',w:270,h:760,
-  specs:['Объём 314 литров','Высота 196 см','Класс энергии A+','Сделано в России'],fx:'sweep'},
- {id:'p3',t:[24.7,34.1],bg:'linear-gradient(170deg,#0a1a5c,#0057B8 70%,#1a7de0)',side:1,
-  cat:'Стирально-сушильная машина',name:'CANDY NOVA',sub:'C33D4 474MBBW',img:'img/candy_cut.png',w:490,h:690,
-  specs:['Стирка 7 кг + сушка','Отжим 1400 об/мин','Обработка паром','12 программ'],fx:'drum',drum:[52,138,376]},
- {id:'p4',t:[34.1,45.1],bg:'linear-gradient(170deg,#2b1d14,#6e4c33 60%,#b08a63)',side:-1,
-  cat:'Спальня «Стокгольм»',name:'Империал',photos:['img/stk_set6_0.jpg','img/stk_set7_0.jpg'],w:960,h:660,
-  specs:['Кровать 160×200 с подъёмником','LED-подсветка кровати и тумб','Шкаф 3-дверный с зеркалом','Комод, 2 тумбы — стиль лофт'],fx:'kb'},
- {id:'p5',t:[45.1,54.0],bg:'linear-gradient(170deg,#0b3b3a,#16706c 60%,#5bb7a8)',side:1,
-  cat:'Стенка для гостиной',name:'Сабина',img:'img/sabina_cut.png',w:600,h:710,
-  specs:['Размер 200 × 220 см','12 полок для хранения','Фасады ЛДСП и стекло','Цвет «ясень анкор светлый»'],fx:'sweep',
-  badgeT:[2.0,3.1,4.2,5.3]},
+ {id:'p1',t:[5.9,14.9],bg:'linear-gradient(170deg,#04203f,#0b6aa8 60%,#4cc3f2)',snow:true,side:1,price:'25 900 ₽',
+  cat:'Холодильник',name:'BOSFOR BFR 143',img:'img/bosfor_cut.png',w:270,h:720,
+  specs:['Объём 165 литров','Компактный: высота 143 см','Класс энергии A+','Перенавешиваемые двери'],fx:'sweep'},
+ {id:'p2',t:[14.9,23.9],bg:'linear-gradient(165deg,#ff2433,#c3000f 60%,#7d0009)',snow:true,side:-1,price:'29 900 ₽',
+  cat:'Холодильник',name:'LERAN CBF 177',img:'img/cbf177_cut.png',w:230,h:730,
+  specs:['Объём 273 литра','Высота 175 см','Класс энергии A','Хит продаж в «Гамбите»'],fx:'sweep'},
+ {id:'p3',t:[23.9,32.4],bg:'linear-gradient(170deg,#1b0b4a,#4a23a8 60%,#18b6a0)',side:1,
+  cat:'Smart-телевизор 32″',name:'RAZZ',sub:'HC32HSS26F',tv:true,w:900,h:600,
+  specs:['IPS-экран 32″, HD','Smart TV · Салют ТВ','Wi-Fi и Bluetooth','2 HDMI, 32 ГБ памяти'],badgeT:[2.0,3.1,4.2,5.3]},
+ {id:'p4',t:[32.4,42.4],bg:'linear-gradient(170deg,#2b2118,#7a6450 60%,#c7b39b)',side:-1,
+  cat:'Шкаф распашной',name:'Феникс-3',sub:'фабрика «Империал»',img:'img/fenix_cut.png',w:500,h:680,
+  specs:['Ширина 160, высота 220 см','4 двери и 3 ящика','Цвет «кашемир»','Модульная серия «Феникс»'],fx:'sweep'},
+ {id:'p5',t:[42.4,54.0],bg:'linear-gradient(170deg,#12161f,#3a4252 60%,#7d8799)',side:1,
+  cat:'Кровать + матрас 160×200',name:'Касли',photos:['img/kasli_room.jpg','img/kasli_lift.jpg'],w:960,h:640,
+  specs:['Подъёмный механизм и ниша','Ортопедическое основание','Мягкое изголовье, велюр','+ матрас Prime Hit 160×200'],fx:'kb',badgeT:[2.0,3.3,4.6,5.9]},
 ];
 const S={A:[0,3.6],B:[3.6,5.9]};PRODUCTS.forEach(p=>S[p.id]=p.t);S.F=[54.0,60.2];
 const CUTS=[3.6,5.9,...PRODUCTS.slice(1).map(p=>p.t[0]),54.0];
@@ -101,7 +103,16 @@ const host=$('P');
 for(const p of PRODUCTS){
   const top=560, left=(1080-p.w)/2;
   let prod;
-  if(p.photos){prod=`<div class="frame img" id="${p.id}Prod" style="left:${left}px;top:${top}px;width:${p.w}px;height:${p.h}px">`+
+  if(p.tv){prod=`<div class="img" id="${p.id}Prod" style="left:${left}px;top:${top+40}px;width:${p.w}px;height:${p.h}px">
+      <div style="position:absolute;left:0;top:0;width:${p.w}px;height:${p.h-60}px;background:#0b0b0f;border-radius:14px;box-shadow:0 30px 60px rgba(0,0,0,.55)"></div>
+      <div id="${p.id}Scr" style="position:absolute;left:10px;top:10px;width:${p.w-20}px;height:${p.h-80}px;border-radius:6px;overflow:hidden;background:#000">
+        <div id="${p.id}ScrBg" style="position:absolute;left:-200px;top:-200px;width:${p.w+380}px;height:${p.h+300}px"></div>
+        <div style="position:absolute;left:0;top:150px;width:100%;text-align:center;font:400 150px Russo;color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5)">SMART</div>
+        <div style="position:absolute;left:0;top:320px;width:100%;text-align:center;font:800 58px Mont;color:#fff;letter-spacing:10px">САЛЮТ ТВ</div>
+        <div class="sweep" id="${p.id}Sw"></div></div>
+      <div style="position:absolute;left:${p.w*0.18}px;top:${p.h-62}px;width:22px;height:60px;background:#111;transform:skewX(18deg);border-radius:4px"></div>
+      <div style="position:absolute;left:${p.w*0.8}px;top:${p.h-62}px;width:22px;height:60px;background:#111;transform:skewX(-18deg);border-radius:4px"></div></div>`}
+  else if(p.photos){prod=`<div class="frame img" id="${p.id}Prod" style="left:${left}px;top:${top}px;width:${p.w}px;height:${p.h}px">`+
       p.photos.map((s,i)=>`<img id="${p.id}Ph${i}" src="${s}">`).join('')+`<div class="sweep" id="${p.id}Sw"></div></div>`}
   else{prod=`<div class="img" id="${p.id}Prod" style="left:${left}px;top:${top+(690-p.h)/2}px;width:${p.w}px;height:${p.h}px">
       <img src="${p.img}" style="position:absolute;left:0;top:0;width:${p.w}px;height:${p.h}px;object-fit:contain">`+
@@ -113,6 +124,7 @@ for(const p of PRODUCTS){
     <div class="t" id="${p.id}Name" style="top:255px;font-size:${p.sub?190:165}px">${p.name}</div>
     ${p.sub?`<div class="t" id="${p.id}Sub" style="top:462px;font:800 50px Mont;letter-spacing:6px">${p.sub}</div>`:''}
     ${prod}
+    ${p.price?`<div class="price" id="${p.id}Pr"><div class="pr1">ЦЕНА</div><div class="pr2">${p.price}</div></div>`:''}
     ${p.specs.map((s,i)=>`<div class="badge" id="${p.id}B${i}" style="top:${1290+i*110}px"><div class="ic" style="background:${i%2?'#0057B8':'#E30613'}">✓</div><div class="tx">${s}</div></div>`).join('')}
   </div>`);
 }
@@ -128,7 +140,7 @@ LETTER_IDS.forEach(letters);
 const IMPACTS=[];const impact=(t,a=1)=>IMPACTS.push([t,a]);
 impact(.7,.8);impact(.95,1.2);impact(3.75,1.3);impact(4.35,.7);impact(4.7,1.1);
 PRODUCTS.forEach(p=>{const s=p.t[0];impact(s+.15,1);impact(s+.55,1.1);impact(s+1.15,.8)});
-impact(54.2,1.1);impact(55.05,.9);impact(56.35,1.4);
+PRODUCTS.filter(p=>p.price).forEach(p=>impact(p.t[0]+1.95,1.2));impact(54.2,1.1);impact(55.05,.9);impact(56.35,1.4);
 
 let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;const FL=[];
 for(let i=0;i<46;i++){const f=document.createElement('div');f.className='flake';f.textContent=rnd()<.5?'❄':'•';$('snow').appendChild(f);
@@ -153,9 +165,12 @@ function product(p,t){const s=p.t[0],id=p.id,lt=t-s,bt=p.badgeT||[2.3,3.5,4.7,5.
   $(id+'Rays').style.transform=`rotate(${lt*14}deg) scale(${1+.04*Math.sin(t*6)})`;$(id+'Glow').style.opacity=.55+.25*Math.sin(lt*Math.PI/BEAT);
   if(p.fx==='drum'){const d=$(id+'Drum');d.style.transform=`rotate(${lt*540}deg)`;d.style.opacity=t<s+1.4?0:.9}
   if($(id+'Sw'))$(id+'Sw').style.transform=`translateX(${((lt*500)%2200)-1100}px)`;
-  if(p.photos){const dur=p.t[1]-s,sw=P(t,s+dur*.55,s+dur*.55+.6);
-    p.photos.forEach((_,i)=>{const im=$(id+'Ph'+i);im.style.opacity=i===0?1:sw;
-      im.style.transform=`scale(${1.04+.1*P(t,s,p.t[1])}) translateX(${(i?-1:1)*20*P(t,s,p.t[1])}px)`})}
+  if(p.photos){const n=p.photos.length,seg=(p.t[1]-s-1.2)/n;
+    p.photos.forEach((_,i)=>{const im=$(id+'Ph'+i),a=s+1.2+i*seg;im.style.opacity=i===0?1:P(t,a,a+.5);
+      im.style.transform=`scale(${1.04+.12*P(t,a-seg*.2,a+seg)}) translateX(${(i%2?-1:1)*24*P(t,a,a+seg)}px)`})}
+  if(p.price){const q2=P(t,s+1.7,s+2.15),pulse=1+.06*Math.pow(Math.abs(Math.sin((t-s)*Math.PI/BEAT)),6);
+    setT(id+'Pr',{o:t<s+1.7?0:C(q2*3),s:L(0,1,back(q2))*(t>s+2.2?pulse:1),r:L(-200,-12,expo(q2))})}
+  if(p.tv){$(id+'ScrBg').style.background=`conic-gradient(from ${lt*70}deg at 50% 50%,#7a3cff,#18c6a6,#2d7bff,#ff3d8b,#7a3cff)`;$(id+'ScrBg').style.transform=`rotate(${lt*20}deg) scale(1.2)`}
 }
 
 function render(t){
