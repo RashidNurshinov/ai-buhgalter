@@ -131,3 +131,5 @@
   и `..._voice_el.mp4` (ElevenLabs v3, голос Adam). Музыка приглушается под голос (sidechain). @boss выбирает голос.
 - Скрипты: `video_engine/voice/` (tts.py, voice.py, README). Нюансы RouterAI: соединение иногда рвётся — ретраи;
   fish-audio и qwen требуют voice-id; английский префикс-инструкция в тексте Gemini зачитывается — стиль только через provider.options.
+- **Доставка роликов @boss — через MAX-бота** (env `MAX_BOT_TOKEN`, бот «Гамбит+Гипремаркетмбели»), чат @boss: chat_id `122272011`.
+  `python3 video_engine/voice/max_send_video.py 122272011 файл.mp4 "подпись"`. Перед отправкой ужимать до 720p (~7 МБ): `-vf scale=720:1280 -crf 26`.
