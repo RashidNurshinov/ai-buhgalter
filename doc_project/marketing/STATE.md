@@ -125,3 +125,9 @@
 ### Запланированная задача
 - «Утренние ролики Гамбит» (trig_01FFdu2e8gJk9gj5fRbjUXCn), 9:24 Asia/Yekaterinburg, стреляет в сессию session_01R7DGRPP7qZS6JYBkn34FCt.
   Если работа переехала в новую сессию — перепривязать задачу к ней.
+
+## 🎙️ Озвучка (2026-10-22)
+- Ролик 22.10 озвучен в двух вариантах: `output/gambit_ad_2026-10-22_hity_60s_voice_gem.mp4` (Gemini 3.8 Flash TTS, голос Fenrir)
+  и `..._voice_el.mp4` (ElevenLabs v3, голос Adam). Музыка приглушается под голос (sidechain). @boss выбирает голос.
+- Скрипты: `video_engine/voice/` (tts.py, voice.py, README). Нюансы RouterAI: соединение иногда рвётся — ретраи;
+  fish-audio и qwen требуют voice-id; английский префикс-инструкция в тексте Gemini зачитывается — стиль только через provider.options.
