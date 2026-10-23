@@ -95,8 +95,8 @@ const PRODUCTS=[
   cat:'Кровать + матрас 160×200',name:'Касли',photos:['img/kasli_room.jpg','img/kasli_lift.jpg'],w:960,h:640,
   specs:['Подъёмный механизм и ниша','Ортопедическое основание','Мягкое изголовье, велюр','+ матрас Prime Hit 160×200'],fx:'kb',badgeT:[2.0,3.3,4.6,5.9]},
 ];
-const S={A:[0,3.6],B:[3.6,5.9]};PRODUCTS.forEach(p=>S[p.id]=p.t);S.F=[54.0,60.2];
-const CUTS=[3.6,5.9,...PRODUCTS.slice(1).map(p=>p.t[0]),54.0];
+const S={A:[0,3.6],B:[3.6,5.9]};PRODUCTS.forEach(p=>S[p.id]=p.t);const END=PRODUCTS[PRODUCTS.length-1].t[1];S.F=[END,END+6.2];
+const CUTS=[3.6,5.9,...PRODUCTS.slice(1).map(p=>p.t[0]),END];
 
 // построение сцен товаров
 const host=$('P');
@@ -140,7 +140,7 @@ LETTER_IDS.forEach(letters);
 const IMPACTS=[];const impact=(t,a=1)=>IMPACTS.push([t,a]);
 impact(.7,.8);impact(.95,1.2);impact(3.75,1.3);impact(4.35,.7);impact(4.7,1.1);
 PRODUCTS.forEach(p=>{const s=p.t[0];impact(s+.15,1);impact(s+.55,1.1);impact(s+1.15,.8)});
-PRODUCTS.filter(p=>p.price).forEach(p=>impact(p.t[0]+1.95,1.2));impact(54.2,1.1);impact(55.05,.9);impact(56.35,1.4);
+PRODUCTS.filter(p=>p.price).forEach(p=>impact(p.t[0]+1.95,1.2));impact(END+.2,1.1);impact(END+1.05,.9);impact(END+2.35,1.4);
 
 let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;const FL=[];
 for(let i=0;i<46;i++){const f=document.createElement('div');f.className='flake';f.textContent=rnd()<.5?'❄':'•';$('snow').appendChild(f);
@@ -188,7 +188,7 @@ function render(t){
     slideLetters('aTag',t,1.35,.03,.4,-800);$('A').style.transform=`scale(${1+io(P(t,2.6,3.6))*.12})`}
   if(sc==='B'){slamLetters('bTop',t,3.7,.06,.3,3.4);slideLetters('bFor',t,4.25,.04,.35,-900);slamLetters('bHome',t,4.6,.05,.3,3);$('B').style.transform=`scale(${1+P(t,5.0,5.9)*.08})`}
   if(pr)product(pr,t);
-  if(sc==='F'){const T=54.0;bands('fBandR','fBandB',t,T,-150,1830);slamLetters('fWait',t,T+.15,.06,.3,3.4);
+  if(sc==='F'){const T=END;bands('fBandR','fBandB',t,T,-150,1830);slamLetters('fWait',t,T+.15,.06,.3,3.4);
     const p=P(t,T+.8,T+1.5);setT('fLogo',{o:t<T+.8?0:C(p*3),s:L(0,1,back(p)),r:L(-30,0,expo(p))});
     const a=P(t,T+1.6,T+2.1);setT('fAddr',{o:t<T+1.6?0:C(a*3),x:L(-1100,0,back(a))});
     const ph=P(t,T+2.2,T+2.55),beat=Math.pow(Math.abs(Math.sin((t-T-2.2)*Math.PI/BEAT)),8);
@@ -201,7 +201,7 @@ function render(t){
     $(w).style.display='block';$(w).style.transform=`translateX(${L(-wd-600,1680,p)}px) skewX(-16deg)`});
   let sx=0,sy=0,rot=0,fl=0;
   for(const [a,amp] of IMPACTS){const d=t-a;if(d>=0&&d<.45){const k=Math.exp(-d*14)*amp;sx+=Math.sin(d*95)*22*k;sy+=Math.cos(d*80)*16*k;rot+=Math.sin(d*70)*.8*k}}
-  for(const a of [.95,3.75,56.35]){const d=t-a;if(d>=0&&d<.25)fl=Math.max(fl,(1-d/.25)*.55)}
+  for(const a of [.95,3.75,END+2.35]){const d=t-a;if(d>=0&&d<.25)fl=Math.max(fl,(1-d/.25)*.55)}
   $('stage').style.transform=`translate(${sx}px,${sy}px) rotate(${rot}deg)`;$('flash').style.opacity=fl;
 }
 window.render=render;
