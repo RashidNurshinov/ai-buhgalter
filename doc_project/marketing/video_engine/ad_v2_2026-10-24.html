@@ -1,0 +1,215 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<!-- Шаблон v2 «Витрина»: тёмный неон, круглые переходы, карточки-цифры, ценник-лента, стопка фото.
+     Правится только список PRODUCTS (+ INTRO). render(t) рисует кадр на момент t. -->
+<style>
+@font-face{font-family:Russo;src:url(fonts/RussoOne.ttf)}
+@font-face{font-family:Mont;src:url(fonts/Montserrat.ttf);font-weight:100 900}
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#05081a}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden}
+.full{position:absolute;left:0;top:0;width:1080px;height:1920px}
+.scene{position:absolute;left:0;top:0;width:1080px;height:1920px;display:none;overflow:hidden}
+.blob{position:absolute;width:1300px;height:1300px;border-radius:50%;filter:blur(40px)}
+.dot{position:absolute;border-radius:50%;background:#fff}
+.num{position:absolute;left:60px;top:160px;font:400 140px Russo;color:transparent;-webkit-text-stroke:3px rgba(255,255,255,.55);line-height:1}
+.cat{position:absolute;left:290px;top:190px;font:800 44px Mont;letter-spacing:5px;color:#fff;text-transform:uppercase;white-space:nowrap}
+.cur{display:inline-block;width:6px;height:44px;margin-left:6px;vertical-align:-6px}
+.nm{position:absolute;left:0;width:1080px;text-align:center;font:400 150px Russo;color:#fff;white-space:nowrap;line-height:1.08;overflow:hidden}
+.nm .l{display:inline-block}
+.sub{position:absolute;left:0;width:1080px;text-align:center;font:700 46px Mont;letter-spacing:8px;white-space:nowrap}
+.prod{position:absolute;will-change:transform,filter}
+.ring{position:absolute;border-radius:50%;border:6px dashed rgba(255,255,255,.35)}
+.halo{position:absolute;border-radius:50%}
+.shadow{position:absolute;height:60px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,0,0,.6),rgba(0,0,0,0) 70%)}
+.card{position:absolute;left:90px;top:1350px;width:900px;height:270px;border-radius:36px;background:rgba(255,255,255,.08);
+  border:2px solid rgba(255,255,255,.25);backdrop-filter:blur(6px);display:flex;align-items:center;transform-origin:50% 0;box-sizing:border-box;padding:0 50px}
+.card .v{font:400 96px Russo;white-space:nowrap;min-width:330px}
+.card .lb{font:800 44px Mont;color:#fff;line-height:1.15;padding-left:36px;border-left:4px solid rgba(255,255,255,.3)}
+.pips{position:absolute;left:0;top:1660px;width:1080px;display:flex;justify-content:center;gap:22px}
+.pip{width:22px;height:22px;border-radius:11px;background:rgba(255,255,255,.3)}
+.ribbon{position:absolute;left:-60px;top:1135px;width:1200px;height:170px;transform-origin:50% 50%;display:flex;align-items:center;justify-content:center;gap:34px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.ribbon .a{font:900 48px Mont;letter-spacing:8px;color:#1a0a00}
+.ribbon .b{font:400 112px Russo;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.25);white-space:nowrap}
+.ribbon .sh{position:absolute;top:0;width:220px;height:170px;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.65),rgba(255,255,255,0))}
+.psub{position:absolute;left:0;top:1318px;width:1080px;text-align:center;font:800 40px Mont;color:#ffd84d;white-space:nowrap}
+.photo{position:absolute;border-radius:26px;overflow:hidden;border:10px solid #fff;box-shadow:0 30px 70px rgba(0,0,0,.6);background:#fff}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+#bar{position:absolute;left:60px;top:70px;width:960px;height:12px;display:flex;gap:12px}
+#bar div{flex:1;height:12px;border-radius:6px;background:rgba(255,255,255,.18);overflow:hidden}
+#bar i{display:block;height:100%;width:0;border-radius:6px}
+#footer{position:absolute;left:40px;top:1790px;width:1000px;height:96px;border-radius:48px;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;font:700 36px Mont;color:#fff}
+#footer b{color:#ff3341}
+#iris{position:absolute;left:540px;top:960px;border-radius:50%;border:14px solid #fff;transform:translate(-50%,-50%);display:none}
+.word{position:absolute;left:0;width:1080px;text-align:center;font:400 200px Russo;color:#fff;line-height:1;overflow:hidden;white-space:nowrap}
+</style></head>
+<body>
+<div id="stage">
+  <div id="bg" class="full"></div>
+  <div id="blobs" class="full"><div class="blob" id="b1"></div><div class="blob" id="b2"></div></div>
+  <div id="dots" class="full"></div>
+
+  <div id="A" class="scene">
+    <div class="halo" id="aHalo" style="left:90px;top:350px;width:900px;height:900px"></div>
+    <div id="aLogo" class="prod" style="left:170px;top:420px;width:740px;height:600px;border-radius:60px;background:#fff;box-shadow:0 0 120px rgba(80,170,255,.55)"><img src="img/logo_full.png" style="position:absolute;left:70px;top:50px;width:600px"></div>
+    <div class="word" id="aW1" style="top:1180px"><span>ВЫБОР</span></div>
+    <div class="word" id="aW2" style="top:1390px;font-size:150px;color:#ffd84d"><span>НЕДЕЛИ</span></div>
+  </div>
+
+  <div id="P"></div>
+
+  <div id="F" class="scene">
+    <div class="word" id="fW" style="top:230px;font-size:150px"><span>ЖДЁМ ВАС!</span></div>
+    <div id="fLogo" class="prod" style="left:290px;top:430px;width:500px;height:420px;border-radius:44px;background:#fff;box-shadow:0 0 90px rgba(255,80,60,.5)"><img src="img/logo_full.png" style="position:absolute;left:50px;top:30px;width:400px"></div>
+    <div id="fPin" style="position:absolute;left:96px;top:1000px;width:888px;height:150px;border-radius:30px;background:#fff;display:flex;align-items:center;justify-content:center;gap:24px">
+      <div style="width:64px;height:64px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#E30613;position:relative"><div style="position:absolute;left:20px;top:20px;width:24px;height:24px;border-radius:50%;background:#fff"></div></div>
+      <span style="font:900 72px Mont;color:#0B1E5B">ул. Торговая, 3</span></div>
+    <div id="fPhone" style="position:absolute;left:60px;top:1210px;width:960px;height:190px;border-radius:95px;background:linear-gradient(90deg,#E30613,#ff5a36);display:flex;align-items:center;justify-content:center;gap:22px">
+      <span style="font:400 86px 'DejaVu Sans';color:#fff">☎</span><span style="font:400 100px Russo;color:#fff">(35366) 2-18-16</span></div>
+    <div id="fPulse" style="position:absolute;left:60px;top:1210px;width:960px;height:190px;border-radius:95px;border:6px solid #ff5a36;box-sizing:border-box"></div>
+    <div class="sub" id="fShop" style="top:1480px;color:#9fd0ff;letter-spacing:4px">ТЕХНИКА И МЕБЕЛЬ ДЛЯ ДОМА</div>
+  </div>
+
+  <div id="bar"></div>
+  <div id="footer">ГАМБИТ&nbsp;<b>•</b>&nbsp;ул. Торговая, 3&nbsp;<b>•</b>&nbsp;☎ (35366) 2-18-16</div>
+  <div id="iris"></div>
+</div>
+<script>
+const C=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),P=(t,a,b)=>C((t-a)/(b-a)),L=(a,b,x)=>a+(b-a)*x;
+const back=x=>{const c1=1.7,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const expo=x=>x>=1?1:1-Math.pow(2,-10*x),io=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const $=id=>document.getElementById(id);
+
+// ---- товары: правится только этот список
+// feats: {v:'7 кг', l:'подпись', at:сек от начала сцены}; price/priceAt/priceSub; img (вырезка PNG) или photos[] (стопка фото)
+const INTRO=4.4, OUTRO=7.8;
+const PRODUCTS=[
+ {id:'p1',t:[4.4,18.6],ac:'#35c6ff',ac2:'#1a5cff',cat:'Стиральная машина',name:'LERAN',sub:'WMS 67106 AWD2',img:'img/leranwms_cut.png',w:520,h:707,
+  feats:[{v:'6 кг',l:'загрузка<br>белья',at:1.6},{v:'ПАР',l:'освежает<br>и убирает складки',at:4.0},{v:'44 см',l:'узкая — встанет<br>в любую ванную',at:6.2},{v:'15',l:'программ<br>стирки',at:10.0}],
+  price:'26 900 ₽',priceAt:11.4,badge:'ХИТ ПРОДАЖ'},
+ {id:'p2',t:[18.6,31.0],ac:'#7dff9a',ac2:'#0f9d58',cat:'Стиральная машина',name:'GORENJE',sub:'W1NHA74SAS',photosCut:['img/gor_cut.png','img/gor_open_cut.png'],w:530,h:740,
+  feats:[{v:'7 кг',l:'загрузка<br>белья',at:1.6},{v:'1400',l:'оборотов<br>отжима',at:3.6},{v:'ПАР',l:'обработка<br>паром',at:6.4},{v:'15',l:'программ',at:8.2}],
+  price:'30 900 ₽',priceAt:9.8},
+ {id:'p3',t:[31.0,54.4],ac:'#ff4fd8',ac2:'#6a2bff',cat:'Телевизор 4K',name:'TCL 65″',sub:'65P6K',photosCut:['img/tcl65_cut.png','img/tcl65_side_cut.png'],w:980,h:613,
+  feats:[{v:'165 см',l:'диагональ —<br>как в кинотеатре',at:3.0},{v:'4K HDR',l:'каждая деталь<br>как живая',at:7.4},{v:'Google TV',l:'кино, YouTube<br>и приложения',at:11.0},{v:'AirPlay',l:'экран телефона<br>в одно касание',at:14.4}],
+  price:'60 900 ₽',priceAt:17.4,priceSub:'меньше 940 ₽ за дюйм экрана!'},
+ {id:'p4',t:[54.4,68.8],ac:'#ffb347',ac2:'#b8572a',cat:'Стенка для гостиной',name:'СИЕННА',sub:'венге · дуб белфорд',photos:['img/sienna_room.jpg','img/sienna_iso.jpg','img/sienna_detail.jpg'],w:900,h:640,
+  feats:[{v:'2,6 м',l:'ширина —<br>вся стена под контролем',at:1.6},{v:'ТВ',l:'ниша под<br>телевизор',at:4.4},{v:'ШКАФ',l:'для одежды +<br>полки и ящики',at:6.4},{v:'УЮТ',l:'тёплые оттенки<br>дерева',at:10.6}]},
+];
+// ---- конец списка
+
+const END=PRODUCTS[PRODUCTS.length-1].t[1];
+const SC=[['A',0,INTRO],...PRODUCTS.map(p=>[p.id,p.t[0],p.t[1]]),['F',END,END+OUTRO+5]];
+const TR=.55; // длительность круглого перехода
+
+// фон: частицы
+let seed=11;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;const DOTS=[];
+for(let i=0;i<40;i++){const d=document.createElement('div');d.className='dot';const s=4+rnd()*10;d.style.width=d.style.height=s+'px';$('dots').appendChild(d);
+  DOTS.push({el:d,x:rnd()*1080,sp:40+rnd()*90,ph:rnd()*3000,o:.15+rnd()*.45})}
+
+// полоса прогресса
+PRODUCTS.forEach(p=>$('bar').insertAdjacentHTML('beforeend',`<div><i id="${p.id}Bar" style="background:${p.ac}"></i></div>`));
+
+// сцены товаров
+const host=$('P');
+PRODUCTS.forEach((p,k)=>{
+  const top=560,left=(1080-p.w)/2;let prod='';
+  if(p.photos){prod=p.photos.map((s,i)=>`<div class="photo" id="${p.id}Ph${i}" style="left:${left}px;top:${top+20}px;width:${p.w}px;height:${p.h}px"><img src="${s}"></div>`).join('')}
+  else{const imgs=p.photosCut||[p.img];
+    prod=`<div class="halo" id="${p.id}Halo" style="left:${540-450}px;top:${top+p.h/2-450}px;width:900px;height:900px;background:radial-gradient(circle,${p.ac}88,${p.ac}00 62%)"></div>
+      <div class="ring" id="${p.id}Ring" style="left:${540-380}px;top:${top+p.h/2-380}px;width:760px;height:760px;border-color:${p.ac}88"></div>
+      <div class="shadow" id="${p.id}Sh" style="left:${540-p.w*.55}px;top:${top+p.h-30}px;width:${p.w*1.1}px"></div>`+
+      imgs.map((s,i)=>`<img class="prod" id="${p.id}Im${i}" src="${s}" style="left:${left}px;top:${top}px;width:${p.w}px;height:${p.h}px;object-fit:contain">`).join('')}
+  host.insertAdjacentHTML('beforeend',`<div id="${p.id}" class="scene">
+    <div class="num" id="${p.id}Num">0${k+1}</div>
+    <div class="cat" id="${p.id}Cat"><span id="${p.id}CatT"></span><span class="cur" id="${p.id}Cur" style="background:${p.ac}"></span></div>
+    <div class="nm" id="${p.id}Nm" style="top:300px">${[...p.name].map(c=>`<span class="l">${c===' '?'&nbsp;':c}</span>`).join('')}</div>
+    <div class="sub" id="${p.id}Sub" style="top:470px;color:${p.ac}">${p.sub}</div>
+    ${prod}
+    ${p.badge?`<div id="${p.id}Bdg" style="position:absolute;left:650px;top:600px;padding:14px 30px;border-radius:40px;background:#E30613;font:900 40px Mont;color:#fff;letter-spacing:3px;box-shadow:0 10px 30px rgba(0,0,0,.4)">★ ${p.badge}</div>`:''}
+    ${p.feats.map((f,i)=>`<div class="card" id="${p.id}F${i}"><div class="v" style="color:${p.ac}" id="${p.id}V${i}">${f.v}</div><div class="lb">${f.l}</div></div>`).join('')}
+    <div class="pips">${p.feats.map((f,i)=>`<div class="pip" id="${p.id}Pp${i}"></div>`).join('')}</div>
+    ${p.price?`<div class="ribbon" id="${p.id}Rb" style="background:linear-gradient(90deg,#ffd84d,#ff9f1a)"><span class="a">ЦЕНА</span><span class="b">${p.price}</span><div class="sh" id="${p.id}RbSh"></div></div>`:''}
+    ${p.priceSub?`<div class="psub" id="${p.id}Ps">${p.priceSub}</div>`:''}
+  </div>`);
+});
+
+function letterRise(id,t,t0,stag=.045,dur=.45){const ls=$(id).querySelectorAll('.l');ls.forEach((s,i)=>{const p=expo(P(t,t0+i*stag,t0+i*stag+dur));
+  s.style.transform=`translateY(${L(170,0,p)}px) rotate(${L(12,0,p)}deg)`;s.style.opacity=t<t0+i*stag?0:1})}
+function typeText(id,txt,t,t0,cps=26){const n=Math.floor(C((t-t0)*cps,0,txt.length));$(id).textContent=txt.slice(0,n)}
+function countUp(el,v,p){const m=v.match(/^(\d[\d\s]*)(.*)$/);if(!m||p>=1){el.textContent=v;return}
+  const n=parseInt(m[1].replace(/\s/g,''));el.textContent=Math.round(n*p)+m[2]}
+
+function product(p,t){const s=p.t[0],lt=t-s,id=p.id,dur=p.t[1]-s;
+  $(id+'Num').style.opacity=C(lt*3)*.9;$(id+'Num').style.transform=`translateX(${L(-200,0,expo(P(t,s,s+.6)))}px)`;
+  typeText(id+'CatT',p.cat.toUpperCase(),t,s+.25);$(id+'Cur').style.opacity=Math.floor(lt*3)%2?0:1;
+  letterRise(id+'Nm',t,s+.35);
+  const sq=P(t,s+.9,s+1.3);$(id+'Sub').style.opacity=sq;$(id+'Sub').style.letterSpacing=L(30,8,expo(sq))+'px';
+  if(p.photos){const n=p.photos.length,seg=(dur-1.2)/n;
+    p.photos.forEach((_,i)=>{const a=s+.6+i*seg,q=P(t,a,a+.7),e=back(q),el=$(id+'Ph'+i);
+      const rot=[-4,5,-2][i%3],dx=[0,40,-30][i%3];
+      el.style.opacity=t<a?0:1;el.style.zIndex=i;
+      el.style.transform=`translate(${L(1200,dx,e)}px,${L(-200,i*14,e)}px) rotate(${L(40,rot,e)}deg) scale(${1+.04*P(t,a,a+seg*1.4)})`})}
+  else{const imgs=p.photosCut||[p.img],n=imgs.length,q=P(t,s+.7,s+1.5),e=back(q),fl=Math.sin(lt*1.8)*12;
+    imgs.forEach((_,i)=>{const el=$(id+'Im'+i);let o=1;
+      if(n>1){const sw=s+dur*.55;o=i===0?1-P(t,sw,sw+.5):P(t,sw,sw+.5)}
+      el.style.opacity=t<s+.7?0:o*C(q*3);
+      el.style.transform=`perspective(1600px) translateY(${L(160,0,e)+fl}px) rotateY(${L(p.id==='p3'?0:-35,0,expo(q))+Math.sin(lt*.9)*4}deg) scale(${L(.55,1,e)*(1+lt*.006)})`;
+      el.style.filter=q<1?`blur(${(1-expo(q))*18}px)`:'none'});
+    $(id+'Halo').style.opacity=C(q*2)*(.75+.25*Math.sin(lt*3));
+    $(id+'Ring').style.transform=`rotate(${lt*25}deg) scale(${L(.3,1,expo(q))})`;$(id+'Ring').style.opacity=C(q*2);
+    $(id+'Sh').style.opacity=C(q*2)*(1-.15*Math.sin(lt*1.8))}
+  if(p.badge){const b=P(t,s+1.4,s+1.8);$(id+'Bdg').style.transform=`scale(${t<s+1.4?0:back(b)}) rotate(${-8+Math.sin(lt*4)*3}deg)`}
+  // карточки характеристик: переворот по оси X, одна за другой
+  p.feats.forEach((f,i)=>{const a=s+f.at,b=i<p.feats.length-1?s+p.feats[i+1].at:p.t[1]+1,el=$(id+'F'+i);
+    const qi=P(t,a,a+.45),qo=P(t,b-.05,b+.3),on=t>=a&&t<b+.3;el.style.display=on?'flex':'none';
+    if(on){el.style.transform=`perspective(1200px) rotateX(${L(-95,0,back(qi))+L(0,90,io(qo))}deg)`;el.style.opacity=1-qo;countUp($(id+'V'+i),f.v,P(t,a+.1,a+.8))}
+    $(id+'Pp'+i).style.background=t>=a?p.ac:'rgba(255,255,255,.3)';$(id+'Pp'+i).style.transform=`scale(${t>=a&&t<b?1.35:1})`});
+  if(p.price){const a=s+p.priceAt,q=P(t,a,a+.5),el=$(id+'Rb');el.style.display=t>=a?'flex':'none';
+    el.style.transform=`translateX(${L(1300,0,back(q))}px) rotate(-6deg) scale(${t>a+.6?1+.03*Math.pow(Math.abs(Math.sin((t-a)*5)),6):1})`;
+    $(id+'RbSh').style.left=(((t-a)*900)%1800-300)+'px';
+    if(p.priceSub){const q2=P(t,a+1.2,a+1.6);$(id+'Ps').style.opacity=q2;$(id+'Ps').style.transform=`translateY(${L(30,0,expo(q2))}px)`}}
+  $(id+'Bar').style.width=(P(t,s,p.t[1])*100)+'%';
+}
+
+function render(t){
+  const cur=SC.find(s=>t>=s[1]&&t<s[2])||SC[SC.length-1];
+  const idx=SC.indexOf(cur),prev=SC[idx-1],inTr=prev&&t<cur[1]+TR;
+  SC.forEach(s=>$(s[0]).style.display='none');
+  const pr=PRODUCTS.find(p=>p.id===cur[0]);
+  // фон и пятна света в цвет товара
+  const ac=pr?pr.ac:'#3a7bff',ac2=pr?pr.ac2:'#E30613';
+  $('bg').style.background=`linear-gradient(170deg,#05081a,${ac2}55 55%,#05081a)`;
+  $('b1').style.background=`radial-gradient(circle,${ac}66,${ac}00 60%)`;$('b2').style.background=`radial-gradient(circle,${ac2}77,${ac2}00 60%)`;
+  $('b1').style.transform=`translate(${-300+Math.sin(t*.4)*200}px,${-200+Math.cos(t*.3)*150}px)`;
+  $('b2').style.transform=`translate(${200+Math.cos(t*.35)*200}px,${900+Math.sin(t*.45)*180}px)`;
+  DOTS.forEach(d=>{const y=1920-((d.ph+t*d.sp)%2100);d.el.style.transform=`translate(${d.x+Math.sin(t+d.ph)*30}px,${y}px)`;d.el.style.opacity=d.o});
+  // текущая сцена (+ предыдущая под ней во время перехода)
+  const show=(s,tt)=>{$(s[0]).style.display='block';$(s[0]).style.clipPath='none';$(s[0]).style.transform='none';$(s[0]).style.filter='none';draw(s,tt)};
+  if(inTr){show(prev,t);const q=io(P(t,cur[1],cur[1]+TR));$(prev[0]).style.transform=`scale(${1+q*.25})`;$(prev[0]).style.filter=`blur(${q*14}px)`;
+    show(cur,t);const r=L(0,1250,q);$(cur[0]).style.clipPath=`circle(${r}px at 540px 960px)`;
+    $('iris').style.display='block';$('iris').style.width=$('iris').style.height=(2*r+28)+'px';$('iris').style.borderColor=ac;$('iris').style.opacity=1-q*.6}
+  else{show(cur,t);$('iris').style.display='none'}
+  PRODUCTS.forEach(p=>{if(t>=p.t[1])$(p.id+'Bar').style.width='100%';else if(t<p.t[0])$(p.id+'Bar').style.width='0'});
+  const fb=t>=INTRO&&t<END;$('bar').style.opacity=fb?1:0;$('footer').style.display=fb?'flex':'none';
+  $('footer').style.transform=`translateY(${L(150,0,expo(P(t,INTRO,INTRO+.5)))}px)`;
+}
+function draw(s,t){const id=s[0];
+  if(id==='A'){const q=P(t,.15,1.0),e=back(q);$('aLogo').style.transform=`scale(${L(2.6,1,e)}) rotate(${L(-25,0,expo(q))}deg)`;$('aLogo').style.opacity=C(q*3);
+    $('aLogo').style.filter=q<1?`blur(${(1-expo(q))*25}px)`:'none';
+    const h=P(t,.9,1.8);$('aHalo').style.background=`radial-gradient(circle,rgba(53,198,255,${.6*(1-h)}),rgba(53,198,255,0) 65%)`;$('aHalo').style.transform=`scale(${L(.3,1.6,expo(h))})`;
+    [['aW1',1.4],['aW2',1.85]].forEach(([w,a])=>{const q=expo(P(t,a,a+.5));$(w).firstChild.style.display='inline-block';$(w).firstChild.style.transform=`translateY(${L(230,0,q)}px)`});
+    $('A').style.transform=`scale(${1+P(t,2.8,INTRO)*.06})`}
+  else if(id==='F'){const T=END;const q=expo(P(t,T+.3,T+.8));$('fW').firstChild.style.display='inline-block';$('fW').firstChild.style.transform=`translateY(${L(200,0,q)}px)`;
+    const l=P(t,T+.6,T+1.3);$('fLogo').style.transform=`scale(${L(0,1,back(l))}) rotate(${L(180,0,expo(l))}deg)`;
+    const a=P(t,T+1.2,T+1.7);$('fPin').style.transform=`translateX(${L(-1100,0,back(a))}px)`;
+    const ph=P(t,T+1.8,T+2.3);$('fPhone').style.transform=`scale(${L(0,1,back(ph))*(t>T+2.4?1+.03*Math.sin((t-T)*7):1)})`;
+    const pu=((t-T-2.4)%1.2)/1.2;$('fPulse').style.opacity=t>T+2.4?1-pu:0;$('fPulse').style.transform=`scale(${1+pu*.12},${1+pu*.4})`;
+    const sh=P(t,T+2.8,T+3.3);$('fShop').style.opacity=sh}
+  else{const p=PRODUCTS.find(p=>p.id===id);product(p,t)}
+}
+window.render=render;
+window.ready=Promise.all([document.fonts.load('100px Russo'),document.fonts.load('800 46px Mont')]).then(()=>document.fonts.ready).then(()=>{render(0);return true});
+render(0);
+</script>
+</body></html>
