@@ -41,6 +41,13 @@ html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#05081a
   display:flex;align-items:center;justify-content:center;font:700 36px Mont;color:#fff}
 #footer b{color:#ff3341}
 #iris{position:absolute;left:540px;top:960px;border-radius:50%;border:14px solid #fff;transform:translate(-50%,-50%);display:none}
+.chip{position:absolute;padding:10px 22px;border-radius:24px;background:#fff;text-align:center;box-shadow:0 12px 30px rgba(0,0,0,.45);white-space:nowrap;transform-origin:50% 0}
+.chip .cn{font:800 28px Mont;color:#0B1E5B;letter-spacing:1px}
+.chip .cp{font:400 44px Russo;color:#E30613;line-height:1.1}
+.phone{position:absolute;left:600px;top:560px;width:400px;height:720px;border-radius:56px;background:#0b0f1e;border:10px solid #2a3150;box-shadow:0 30px 70px rgba(0,0,0,.6);overflow:hidden}
+.phone .scr{position:absolute;left:0;top:0;width:100%;height:100%;background:linear-gradient(170deg,#1d1446,#3d1d8a 60%,#6a2bff)}
+.bub{position:absolute;max-width:300px;padding:18px 24px;border-radius:26px;font:700 32px Mont;line-height:1.25}
+.alice{position:absolute;left:150px;top:585px;width:100px;height:100px;border-radius:50%;background:conic-gradient(#b14bff,#5b8cff,#ff5ad6,#b14bff)}
 .word{position:absolute;left:0;width:1080px;text-align:center;font:400 200px Russo;color:#fff;line-height:1;overflow:hidden;white-space:nowrap}
 </style></head>
 <body>
@@ -52,8 +59,8 @@ html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#05081a
   <div id="A" class="scene">
     <div class="halo" id="aHalo" style="left:90px;top:350px;width:900px;height:900px"></div>
     <div id="aLogo" class="prod" style="left:170px;top:420px;width:740px;height:600px;border-radius:60px;background:#fff;box-shadow:0 0 120px rgba(80,170,255,.55)"><img src="img/logo_full.png" style="position:absolute;left:70px;top:50px;width:600px"></div>
-    <div class="word" id="aW1" style="top:1180px"><span>ВЫБОР</span></div>
-    <div class="word" id="aW2" style="top:1390px;font-size:150px;color:#ffd84d"><span>НЕДЕЛИ</span></div>
+    <div class="word" id="aW1" style="top:1180px"><span></span></div>
+    <div class="word" id="aW2" style="top:1390px;font-size:150px;color:#ffd84d"><span></span></div>
   </div>
 
   <div id="P"></div>
@@ -82,7 +89,7 @@ const $=id=>document.getElementById(id);
 
 // ---- товары: правится только этот список
 // feats: {v:'7 кг', l:'подпись', at:сек от начала сцены}; price/priceAt/priceSub; img (вырезка PNG) или photos[] (стопка фото)
-const INTRO=4.4, OUTRO=7.0;
+const INTRO=4.4, OUTRO=7.0, INTRO_W=['ВЫБОР','НЕДЕЛИ'];
 const PRODUCTS=[
  {id:'p1',t:[4.4,16.4],ac:'#35c6ff',ac2:'#1a5cff',cat:'Стиральная машина',name:'LERAN',sub:'WMS 67106 AWD2',img:'img/leranwms_cut.png',w:520,h:707,
   feats:[{v:'6 кг',l:'загрузка<br>белья',at:1.6},{v:'ПАР',l:'освежает<br>и убирает складки',at:3.9},{v:'44 см',l:'узкая — встанет<br>в любую ванную',at:6.2},{v:'15',l:'программ<br>стирки',at:8.2}],
@@ -111,10 +118,19 @@ for(let i=0;i<40;i++){const d=document.createElement('div');d.className='dot';co
 PRODUCTS.forEach(p=>$('bar').insertAdjacentHTML('beforeend',`<div><i id="${p.id}Bar" style="background:${p.ac}"></i></div>`));
 
 // сцены товаров
+$('aW1').firstChild.textContent=INTRO_W[0];$('aW2').firstChild.textContent=INTRO_W[1];
+if(INTRO_W[0].length>6)$('aW1').style.fontSize=Math.round(1200/INTRO_W[0].length)+'px';if(INTRO_W[1].length>7)$('aW2').style.fontSize=Math.round(1000/INTRO_W[1].length)+'px';
 const host=$('P');
 PRODUCTS.forEach((p,k)=>{
   const top=560,left=(1080-p.w)/2;let prod='';
   if(p.photos){prod=p.photos.map((s,i)=>`<div class="photo" id="${p.id}Ph${i}" style="left:${left}px;top:${top+20}px;width:${p.w}px;height:${p.h}px"><img src="${s}"></div>`).join('')}
+  else if(p.group){const g=p.group,gap=p.gap||40,tot=g.reduce((a,x)=>a+x.w,0)+gap*(g.length-1),base=top+p.h;let x=(p.groupX??(1080-tot)/2);
+    prod=`<div class="halo" id="${p.id}Halo" style="left:${540-450}px;top:${top+p.h/2-450}px;width:900px;height:900px;background:radial-gradient(circle,${p.ac}88,${p.ac}00 62%)"></div>
+      <div class="ring" id="${p.id}Ring" style="left:${540-380}px;top:${top+p.h/2-380}px;width:760px;height:760px;border-color:${p.ac}88"></div>
+      <div class="shadow" id="${p.id}Sh" style="left:${(p.groupX??(1080-tot)/2)-30}px;top:${base-30}px;width:${tot+60}px"></div>`;
+    g.forEach((it,i)=>{prod+=`<img class="prod" id="${p.id}G${i}" src="${it.img}" style="left:${x}px;top:${base-it.h}px;width:${it.w}px;height:${it.h}px;object-fit:contain">`;
+      if(it.label||it.price)prod+=`<div class="chip" id="${p.id}C${i}" style="left:${x+it.w/2}px;top:${base+14}px">${it.label?`<div class="cn">${it.label}</div>`:''}${it.price?`<div class="cp">${it.price}</div>`:''}</div>`;
+      x+=it.w+gap})}
   else{const imgs=p.photosCut||[p.img];
     prod=`<div class="halo" id="${p.id}Halo" style="left:${540-450}px;top:${top+p.h/2-450}px;width:900px;height:900px;background:radial-gradient(circle,${p.ac}88,${p.ac}00 62%)"></div>
       <div class="ring" id="${p.id}Ring" style="left:${540-380}px;top:${top+p.h/2-380}px;width:760px;height:760px;border-color:${p.ac}88"></div>
@@ -126,8 +142,12 @@ PRODUCTS.forEach((p,k)=>{
     <div class="nm" id="${p.id}Nm" style="top:300px">${[...p.name].map(c=>`<span class="l">${c===' '?'&nbsp;':c}</span>`).join('')}</div>
     <div class="sub" id="${p.id}Sub" style="top:470px;color:${p.ac}">${p.sub}</div>
     ${prod}
+    ${p.phone?`<div class="phone" id="${p.id}Phn"><div class="scr"></div><div style="position:absolute;left:0;top:40px;width:100%;text-align:center;font:800 30px Mont;color:#fff;opacity:.8">Умный дом</div>
+      <div class="bub" id="${p.id}Q" style="right:20px;top:130px;background:#fff;color:#1d1446;border-bottom-right-radius:6px"></div>
+      <div class="bub" id="${p.id}A" style="left:20px;top:330px;background:#7d4dff;color:#fff;border-bottom-left-radius:6px">${p.phone.ans}</div>
+      <div class="alice" id="${p.id}Al"></div></div>`:''}
     ${p.badge?`<div id="${p.id}Bdg" style="position:absolute;left:650px;top:600px;padding:14px 30px;border-radius:40px;background:#E30613;font:900 40px Mont;color:#fff;letter-spacing:3px;box-shadow:0 10px 30px rgba(0,0,0,.4)">★ ${p.badge}</div>`:''}
-    ${p.feats.map((f,i)=>`<div class="card" id="${p.id}F${i}"><div class="v" style="color:${p.ac}" id="${p.id}V${i}">${f.v}</div><div class="lb">${f.l}</div></div>`).join('')}
+    ${p.feats.map((f,i)=>`<div class="card" id="${p.id}F${i}"><div class="v" style="color:${p.ac};font-size:${f.v.length<=6?96:Math.round(96*6.2/f.v.length)}px" id="${p.id}V${i}">${f.v}</div><div class="lb">${f.l}</div></div>`).join('')}
     <div class="pips">${p.feats.map((f,i)=>`<div class="pip" id="${p.id}Pp${i}"></div>`).join('')}</div>
     ${p.price?`<div class="ribbon" id="${p.id}Rb" style="background:linear-gradient(90deg,#ffd84d,#ff9f1a)"><span class="a">ЦЕНА</span><span class="b">${p.price}</span><div class="sh" id="${p.id}RbSh"></div></div>`:''}
     ${p.priceSub?`<div class="psub" id="${p.id}Ps">${p.priceSub}</div>`:''}
@@ -137,7 +157,7 @@ PRODUCTS.forEach((p,k)=>{
 function letterRise(id,t,t0,stag=.045,dur=.45){const ls=$(id).querySelectorAll('.l');ls.forEach((s,i)=>{const p=expo(P(t,t0+i*stag,t0+i*stag+dur));
   s.style.transform=`translateY(${L(170,0,p)}px) rotate(${L(12,0,p)}deg)`;s.style.opacity=t<t0+i*stag?0:1})}
 function typeText(id,txt,t,t0,cps=26){const n=Math.floor(C((t-t0)*cps,0,txt.length));$(id).textContent=txt.slice(0,n)}
-function countUp(el,v,p){const m=v.match(/^(\d[\d\s]*)(.*)$/);if(!m||p>=1){el.textContent=v;return}
+function countUp(el,v,p){const m=v.match(/^(\d[\d\s]*)(.*)$/);if(!m||p>=1||m[2].trim().length>4||/[×–\/]/.test(m[2])){el.textContent=v;return}
   const n=parseInt(m[1].replace(/\s/g,''));el.textContent=Math.round(n*p)+m[2]}
 
 function product(p,t){const s=p.t[0],lt=t-s,id=p.id,dur=p.t[1]-s;
@@ -150,15 +170,26 @@ function product(p,t){const s=p.t[0],lt=t-s,id=p.id,dur=p.t[1]-s;
       const rot=[-4,5,-2][i%3],dx=[0,40,-30][i%3];
       el.style.opacity=t<a?0:1;el.style.zIndex=i;
       el.style.transform=`translate(${L(1200,dx,e)}px,${L(-200,i*14,e)}px) rotate(${L(40,rot,e)}deg) scale(${1+.04*P(t,a,a+seg*1.4)})`})}
-  else{const imgs=p.photosCut||[p.img],n=imgs.length,q=P(t,s+.7,s+1.5),e=back(q),fl=Math.sin(lt*1.8)*12;
+  else if(!p.group){const imgs=p.photosCut||[p.img],n=imgs.length,q=P(t,s+.7,s+1.5),e=back(q),fl=Math.sin(lt*1.8)*12;
     imgs.forEach((_,i)=>{const el=$(id+'Im'+i);let o=1;
       if(n>1){const sw=s+dur*.55;o=i===0?1-P(t,sw,sw+.5):P(t,sw,sw+.5)}
       el.style.opacity=t<s+.7?0:o*C(q*3);
-      el.style.transform=`perspective(1600px) translateY(${L(160,0,e)+fl}px) rotateY(${L(p.id==='p3'?0:-35,0,expo(q))+Math.sin(lt*.9)*4}deg) scale(${L(.55,1,e)*(1+lt*.006)})`;
+      el.style.transform=`perspective(1600px) translateY(${L(160,0,e)+fl}px) rotateY(${L(p.noTurn?0:-35,0,expo(q))+Math.sin(lt*.9)*4}deg) scale(${L(.55,1,e)*(1+lt*.006)})`;
       el.style.filter=q<1?`blur(${(1-expo(q))*18}px)`:'none'});
     $(id+'Halo').style.opacity=C(q*2)*(.75+.25*Math.sin(lt*3));
     $(id+'Ring').style.transform=`rotate(${lt*25}deg) scale(${L(.3,1,expo(q))})`;$(id+'Ring').style.opacity=C(q*2);
     $(id+'Sh').style.opacity=C(q*2)*(1-.15*Math.sin(lt*1.8))}
+  if(p.group){const q=P(t,s+.7,s+1.5);
+    p.group.forEach((it,i)=>{const a=s+.7+i*.28,qi=P(t,a,a+.6),e=back(qi),el=$(id+'G'+i);el.style.opacity=t<a?0:C(qi*3);
+      el.style.transform=`translateY(${L(300,0,e)+Math.sin(lt*1.8+i)*8}px) scale(${L(.4,1,e)})`;el.style.filter=qi<1?`blur(${(1-expo(qi))*14}px)`:'none';
+      const c=$(id+'C'+i);if(c){const qc=P(t,a+.5,a+.9);c.style.opacity=qc;c.style.transform=`translateX(-50%) scale(${t<a+.5?0:back(qc)})`}});
+    $(id+'Halo').style.opacity=C(q*2)*(.75+.25*Math.sin(lt*3));
+    $(id+'Ring').style.transform=`rotate(${lt*25}deg) scale(${L(.3,1,expo(q))})`;$(id+'Ring').style.opacity=C(q*2)*.6;
+    $(id+'Sh').style.opacity=C(q*2)}
+  if(p.phone){const a=s+1.0,q=P(t,a,a+.6),ph=p.phone;$(id+'Phn').style.transform=`translateX(${L(700,0,back(q))}px) rotate(${L(15,-3,expo(q))+Math.sin(lt*1.2)*1.2}deg)`;
+    const qs=s+ph.at;const n=Math.floor(C((t-qs)*16,0,ph.ask.length));$(id+'Q').textContent=ph.ask.slice(0,n);$(id+'Q').style.opacity=t<qs?0:1;
+    const qa=P(t,qs+ph.ask.length/16+.6,qs+ph.ask.length/16+1.1);$(id+'A').style.opacity=qa;$(id+'A').style.transform=`scale(${t<qs+ph.ask.length/16+.6?0:back(qa)})`;
+    const pu=1+.12*Math.abs(Math.sin(lt*4))*(t>qs&&t<qs+ph.ask.length/16?1:.25);$(id+'Al').style.transform=`scale(${pu}) rotate(${lt*90}deg)`}
   if(p.badge){const b=P(t,s+1.4,s+1.8);$(id+'Bdg').style.transform=`scale(${t<s+1.4?0:back(b)}) rotate(${-8+Math.sin(lt*4)*3}deg)`}
   // карточки характеристик: переворот по оси X, одна за другой
   p.feats.forEach((f,i)=>{const a=s+f.at,b=i<p.feats.length-1?s+p.feats[i+1].at:p.t[1]+1,el=$(id+'F'+i);
