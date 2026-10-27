@@ -147,7 +147,7 @@ PRODUCTS.forEach((p,k)=>{
       <div class="bub" id="${p.id}A" style="left:20px;top:330px;background:#7d4dff;color:#fff;border-bottom-left-radius:6px">${p.phone.ans}</div>
       <div class="alice" id="${p.id}Al"></div></div>`:''}
     ${p.badge?`<div id="${p.id}Bdg" style="position:absolute;left:650px;top:600px;padding:14px 30px;border-radius:40px;background:#E30613;font:900 40px Mont;color:#fff;letter-spacing:3px;box-shadow:0 10px 30px rgba(0,0,0,.4)">★ ${p.badge}</div>`:''}
-    ${p.feats.map((f,i)=>`<div class="card" id="${p.id}F${i}"><div class="v" style="color:${p.ac};font-size:${f.v.length<=6?96:Math.round(96*6.2/f.v.length)}px" id="${p.id}V${i}">${f.v}</div><div class="lb">${f.l}</div></div>`).join('')}
+    ${p.feats.map((f,i)=>`<div class="card" id="${p.id}F${i}"><div class="v" style="color:${p.ac};font-size:${f.v.length<=5?96:Math.round(96*5.2/f.v.length)}px" id="${p.id}V${i}">${f.v}</div><div class="lb">${f.l}</div></div>`).join('')}
     <div class="pips">${p.feats.map((f,i)=>`<div class="pip" id="${p.id}Pp${i}"></div>`).join('')}</div>
     ${p.price?`<div class="ribbon" id="${p.id}Rb" style="background:linear-gradient(90deg,#ffd84d,#ff9f1a)"><span class="a">ЦЕНА</span><span class="b">${p.price}</span><div class="sh" id="${p.id}RbSh"></div></div>`:''}
     ${p.priceSub?`<div class="psub" id="${p.id}Ps">${p.priceSub}</div>`:''}
