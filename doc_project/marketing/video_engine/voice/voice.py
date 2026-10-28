@@ -6,7 +6,8 @@ from tts import tts
 name, model, voice, fmt, script = sys.argv[1:6]
 DUR = float(sys.argv[6]) if len(sys.argv) > 6 else 60
 SEG = json.load(open(script))
-extra={'provider':{'options':{'google':{'style':'Энергичный, бодрый голос ведущего радиорекламы, с улыбкой и напором'}}}} if 'gemini' in model else None
+STYLE=os.environ.get('STYLE','Энергичный, бодрый голос ведущего радиорекламы, с улыбкой и напором')  # STYLE=... — другая подача
+extra={'provider':{'options':{'google':{'style':STYLE}}}} if 'gemini' in model else None
 dur = lambda f: float(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','csv=p=0',f]))
 def strip_bursts(src, dst):
     """Gemini TTS добавляет в начало и конец отрезка короткий всплеск белого шума

@@ -1,0 +1,161 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<!-- Шаблон v3 «Мем»: зацеп «Стоп, не листай», мем-подписи, стикеры, штампы, чат, «Ожидание/Реальность», POV.
+     Ролик = список SCENES; в сцене — фон и элементы E (время в секундах ОТ НАЧАЛА СЦЕНЫ). render(t) рисует кадр. -->
+<style>
+@font-face{font-family:Russo;src:url(fonts/RussoOne.ttf)}
+@font-face{font-family:Mont;src:url(fonts/Montserrat.ttf);font-weight:100 900}
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#000}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden;transform-origin:540px 960px}
+.full{position:absolute;left:0;top:0;width:1080px;height:1920px}
+.scene{position:absolute;left:0;top:0;width:1080px;height:1920px;display:none;overflow:hidden}
+.el{position:absolute;transform-origin:50% 50%;will-change:transform,opacity;width:max-content}
+.cap{width:980px;font:900 76px Mont;color:#fff;text-align:center;text-transform:uppercase;line-height:1.08;-webkit-text-stroke:14px #000;paint-order:stroke fill;letter-spacing:1px}
+.big{font:400 170px Russo;color:#fff;text-align:center;line-height:1;-webkit-text-stroke:16px #000;paint-order:stroke fill;white-space:nowrap}
+.emo{font-family:'Noto Color Emoji';line-height:1}
+.stick{background:#fff;color:#111;border-radius:26px;padding:16px 30px;font:800 46px Mont;box-shadow:0 14px 34px rgba(0,0,0,.45);white-space:nowrap}
+.chip{background:rgba(0,0,0,.72);color:#fff;border:3px solid rgba(255,255,255,.35);border-radius:60px;padding:16px 34px;font:800 48px Mont;white-space:nowrap}
+.stamp{border:12px solid #e30613;color:#e30613;border-radius:20px;padding:10px 34px;font:400 92px Russo;white-space:nowrap;background:rgba(255,255,255,.85)}
+.price{background:#ffde00;color:#111;border-radius:30px;padding:18px 44px;font:400 120px Russo;white-space:nowrap;box-shadow:0 0 0 10px #111,0 24px 50px rgba(0,0,0,.5)}
+.price small{display:block;font:900 36px Mont;letter-spacing:6px;text-align:center;color:#111}
+.bub{max-width:700px;border-radius:40px;padding:26px 40px;font:700 58px Mont;line-height:1.2;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.bl{background:#fff;color:#111;border-bottom-left-radius:8px}
+.br{background:#2f80ff;color:#fff;border-bottom-right-radius:8px}
+.lbl{font:900 64px Mont;color:#fff;padding:12px 34px;border-radius:14px;letter-spacing:4px;white-space:nowrap}
+.prod{filter:drop-shadow(0 30px 40px rgba(0,0,0,.55))}
+#grain{position:absolute;left:0;top:0;width:1080px;height:1920px;pointer-events:none;opacity:.07;
+  background-image:repeating-radial-gradient(circle at 17% 32%,#fff 0 1px,transparent 1px 3px),repeating-radial-gradient(circle at 73% 61%,#000 0 1px,transparent 1px 4px)}
+#flash{position:absolute;left:0;top:0;width:1080px;height:1920px;background:#fff;opacity:0}
+#footer{position:absolute;left:40px;top:1800px;width:1000px;height:88px;border-radius:44px;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font:700 34px Mont;color:#fff}
+#footer b{color:#ffde00}
+</style></head>
+<body>
+<div id="stage"><div id="bg" class="full"></div><div id="S"></div><div id="grain"></div>
+  <div id="footer">ГАМБИТ&nbsp;<b>•</b>&nbsp;ул. Торговая, 3&nbsp;<b>•</b>&nbsp;☎ (35366) 2-18-16</div></div>
+<div id="flash"></div>
+<script>
+const C=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),P=(t,a,b)=>C((t-a)/(b-a)),L=(a,b,x)=>a+(b-a)*x;
+const back=x=>{const c1=2.2,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const expo=x=>x>=1?1:1-Math.pow(2,-10*x);
+const $=id=>document.getElementById(id);
+const E=(o)=>o; // элемент: {t0,t1,x,y,w?,cls,html,a:'pop'|'stamp'|'glitch'|'slideL'|'slideR'|'slideU'|'type'|'float'|'shakeE', rot?, z?}
+
+// ---- ролик: правится только SCENES
+const SCENES=[
+ {t:[0,5.8],bg:'#0a0a0a',E:[
+   E({t0:.15,x:540,y:520,cls:'big',html:'СТОП<span class="emo"> ✋</span>',a:'glitch'}),
+   E({t0:.9,x:540,y:760,cls:'big',html:'НЕ ЛИСТАЙ',a:'glitch',style:'font-size:150px'}),
+   E({t0:1.9,x:540,y:1060,cls:'cap',html:'это не реклама',a:'pop',style:'font-size:90px'}),
+   E({t0:2.9,x:540,y:1060,w:640,html:'<div style="height:16px;background:#e30613;border-radius:8px;width:0"></div>',a:'strike'}),
+   E({t0:3.1,x:540,y:1230,cls:'cap',html:'ладно, реклама <span class="emo">🙃</span>',a:'pop',style:'font-size:64px;color:#ffde00'}),
+   E({t0:4.1,x:540,y:1420,cls:'stick',html:'но смешная <span class="emo">😎</span>',a:'stamp',rot:-6,style:'font-size:64px'}),
+ ]},
+ {t:[5.8,26.6],bg:'radial-gradient(circle at 50% 45%,#3a63d8,#0d1d55 75%)',E:[
+   E({t0:.3,t1:2.6,x:540,y:280,cls:'cap',html:'знакомьтесь:',a:'pop',style:'font-size:96px'}),
+   E({t0:.4,x:540,y:960,html:'<img src="img/lg6ns6_cut.png" style="width:520px;display:block">',cls:'prod',a:'float'}),
+   E({t0:2.8,t1:14.3,x:540,y:290,cls:'cap',html:'живёт у нас на складе<br>414 дней <span class="emo">😭</span>',a:'pop'}),
+   E({t0:6.1,t1:16.4,x:790,y:600,cls:'stick',html:'<div style="font:700 34px Mont;color:#e30613;text-align:center">ПРИВЕТ, МЕНЯ ЗОВУТ</div><div style="font:400 84px Russo;text-align:center">ЛЮДМИЛА</div>',a:'pop',rot:8}),
+   E({t0:7.6,t1:14.2,x:290,y:1430,cls:'chip',html:'<span class="emo">⚙️</span> прямой привод',a:'pop'}),
+   E({t0:9.3,t1:14.2,x:800,y:1430,cls:'chip',html:'<span class="emo">👕</span> 6 кг',a:'pop'}),
+   E({t0:10.1,t1:14.2,x:290,y:1570,cls:'chip',html:'<span class="emo">🌀</span> 1200 об/мин',a:'pop'}),
+   E({t0:11.8,t1:14.2,x:790,y:1570,cls:'chip',html:'<span class="emo">🤫</span> 55 дБ',a:'pop'}),
+   E({t0:14.4,x:540,y:290,cls:'cap',html:'людмила хочет<br>к вам домой <span class="emo">🥺</span>',a:'pop'}),
+   E({t0:16.6,x:540,y:1620,cls:'price',html:'<small>ЦЕНА</small>35 900 ₽',a:'stamp',rot:-3}),
+   E({t0:18.6,x:560,y:1330,cls:'stamp',html:'ЗАБЕРИ ЛЮДМИЛУ!',a:'stamp',rot:-9}),
+ ]},
+ {t:[26.6,42.0],bg:'linear-gradient(180deg,#3a1170 0 50%,#0d8a63 50% 100%)',E:[
+   E({t0:.2,x:540,y:120,cls:'lbl',html:'ОЖИДАНИЕ',a:'slideL',style:'background:#e30613'}),
+   E({t0:.5,x:540,y:440,cls:'emo',html:'✈️',a:'shakeE',style:'font-size:300px'}),
+   E({t0:1.6,x:540,y:730,cls:'emo',html:'💸💸💸',a:'pop',style:'font-size:130px'}),
+   E({t0:2.0,x:540,y:870,cls:'cap',html:'стиралка с паром',a:'pop',style:'font-size:60px'}),
+   E({t0:3.7,x:540,y:1030,cls:'lbl',html:'РЕАЛЬНОСТЬ',a:'slideR',style:'background:#00b37a'}),
+   E({t0:3.9,x:290,y:1440,html:'<img src="img/birwm612_cut.png" style="width:410px;display:block">',cls:'prod',a:'float'}),
+   E({t0:5.3,x:800,y:1190,cls:'chip',html:'<span class="emo">👕</span> 6 кг',a:'pop',style:'font-size:44px'}),
+   E({t0:6.5,x:800,y:1310,cls:'chip',html:'<span class="emo">🌀</span> 1200 об/мин',a:'pop',style:'font-size:40px'}),
+   E({t0:8.1,x:800,y:1430,cls:'chip',html:'<span class="emo">♨️</span> 16 программ',a:'pop',style:'font-size:40px'}),
+   E({t0:9.6,x:800,y:1550,cls:'chip',html:'<span class="emo">⚡</span> A+++',a:'pop',style:'font-size:44px'}),
+   E({t0:10.7,x:780,y:1690,cls:'price',html:'<small>БИРЮСА</small>28 500 ₽',a:'stamp',rot:-4,style:'font-size:90px'}),
+   E({t0:13.1,x:540,y:520,cls:'stamp',html:'САМОЛЁТ ОТМЕНЯЕТСЯ',a:'stamp',rot:-10,style:'font-size:76px'}),
+ ]},
+ {t:[42.0,58.2],bg:'linear-gradient(180deg,#d9e7d2,#c9dcc0)',E:[
+   E({t0:0,t1:2.6,x:540,y:110,html:'<div style="width:1080px;height:150px;background:#517da2;color:#fff;font:800 52px Mont;display:flex;align-items:center;justify-content:center">Семейный чат <span class="emo">&nbsp;👨‍👩‍👧</span></div>',a:'pop'}),
+   E({t0:.3,t1:2.6,x:360,y:380,cls:'bub bl',html:'Где мои вещи?!',a:'slideL'}),
+   E({t0:.9,t1:2.6,x:720,y:560,cls:'bub br',html:'На стуле <span class="emo">🪑</span>',a:'slideR'}),
+   E({t0:1.5,t1:2.6,x:330,y:740,cls:'bub bl',html:'А шкаф?!',a:'slideL'}),
+   E({t0:1.5,t1:2.6,x:540,y:1150,cls:'emo',html:'🪑',a:'shakeE',style:'font-size:340px'}),
+   E({t0:2.7,t1:10.8,x:540,y:250,cls:'cap',html:'когда вещи<br>живут на стуле',a:'pop'}),
+   E({t0:2.9,x:540,y:930,html:'<img src="img/fenix2k_cut.png" style="width:400px;display:block">',cls:'prod',a:'float'}),
+   E({t0:4.8,t1:10.8,x:250,y:1430,cls:'chip',html:'<span class="emo">🚪</span> 3 двери',a:'pop'}),
+   E({t0:5.5,t1:10.8,x:770,y:1430,cls:'chip',html:'<span class="emo">📏</span> 120×220 см',a:'pop'}),
+   E({t0:8.8,t1:10.8,x:540,y:1570,cls:'chip',html:'<span class="emo">✨</span> рельефный фасад',a:'pop'}),
+   E({t0:10.9,x:540,y:250,cls:'cap',html:'стул: наконец-то<br>свобода <span class="emo">😮‍💨</span>',a:'pop'}),
+   E({t0:12.7,x:540,y:1560,cls:'price',html:'<small>ФЕНИКС-2</small>27 830 ₽',a:'stamp',rot:3}),
+ ]},
+ {t:[58.2,72.5],bg:'radial-gradient(circle at 50% 40%,#2a3442,#0b0f14 75%)',E:[
+   E({t0:.2,t1:3.3,x:540,y:420,cls:'big',html:'POV:',a:'glitch',style:'font-size:220px'}),
+   E({t0:.9,t1:3.3,x:540,y:680,cls:'cap',html:'утро. ты опаздываешь<br>и ищешь ключи',a:'pop'}),
+   E({t0:1.4,t1:3.3,x:250,y:1000,cls:'emo',html:'🔑',a:'shakeE',style:'font-size:150px'}),
+   E({t0:1.7,t1:3.3,x:830,y:1120,cls:'emo',html:'🔑',a:'shakeE',style:'font-size:120px'}),
+   E({t0:2.0,t1:3.3,x:540,y:1300,cls:'emo',html:'😱',a:'shakeE',style:'font-size:260px'}),
+   E({t0:3.4,x:540,y:250,cls:'cap',html:'прихожая йорк',a:'pop',style:'font-size:96px'}),
+   E({t0:3.5,x:540,y:960,html:'<img src="img/york_zerk_cut.png" style="width:300px;display:block">',cls:'prod',a:'float'}),
+   E({t0:4.4,x:720,y:640,cls:'emo',html:'✨',a:'pop',style:'font-size:120px'}),
+   E({t0:6.0,t1:10.9,x:800,y:560,cls:'stamp',html:'КЛЮЧИ НАШЛИСЬ',a:'stamp',rot:8,style:'font-size:56px'}),
+   E({t0:5.6,t1:10.9,x:260,y:1430,cls:'chip',html:'<span class="emo">🪞</span> зеркало',a:'pop'}),
+   E({t0:8.1,t1:10.9,x:770,y:1430,cls:'chip',html:'<span class="emo">✨</span> белый глянец',a:'pop'}),
+   E({t0:9.4,t1:10.9,x:540,y:1570,cls:'chip',html:'<span class="emo">📏</span> всего 60 см',a:'pop'}),
+   E({t0:11.0,x:540,y:1580,cls:'price',html:'<small>ЙОРК</small>15 670 ₽',a:'stamp',rot:-3}),
+ ]},
+ {t:[72.5,81],bg:'radial-gradient(circle at 50% 40%,#2b2f6b,#0b0d24 70%)',E:[
+   E({t0:.2,x:540,y:400,html:'<div style="background:#fff;border-radius:50px;padding:40px 60px;box-shadow:0 0 120px rgba(80,170,255,.5)"><img src="img/logo_full.png" style="width:440px;display:block"></div>',a:'stamp'}),
+   E({t0:.7,x:540,y:770,cls:'stick',html:'<span class="emo">📍</span> ул. Торговая, 3',a:'slideL',style:'font-size:70px'}),
+   E({t0:2.6,x:540,y:990,cls:'price',html:'<span style="font-family:DejaVu Sans">☎</span> (35366) 2-18-16',a:'stamp',style:'font-size:92px;background:#e30613;color:#fff'}),
+   E({t0:5.3,x:540,y:1240,cls:'cap',html:'людмила ждёт <span class="emo">🥺</span>',a:'pop',style:'font-size:90px'}),
+   E({t0:5.4,x:540,y:1520,html:'<img src="img/lg6ns6_cut.png" style="width:230px;display:block">',cls:'prod',a:'float'}),
+ ]},
+];
+const FINAL={bg:'#0b0d24'};
+// ---- конец
+
+const host=$('S'),IMP=[];
+SCENES.forEach((s,k)=>{let h=`<div class="scene" id="sc${k}">`;
+  s.E.forEach((e,i)=>{h+=`<div class="el ${e.cls||''}" id="e${k}_${i}" style="left:${e.x}px;top:${e.y}px;${e.w?`width:${e.w}px;`:''}${e.style||''}">${e.html}</div>`;
+    if(['stamp','glitch'].includes(e.a))IMP.push([s.t[0]+e.t0+(e.a==='stamp'?.12:0),e.a==='stamp'?1.3:.8])});
+  host.insertAdjacentHTML('beforeend',h+'</div>');IMP.push([s.t[0],1.1])});
+
+function anim(el,e,lt,dur){const t0=e.t0,t1=e.t1??dur+1,p=lt-t0;
+  if(lt<t0||lt>t1+.25){el.style.display='none';return}el.style.display='block';
+  const out=P(lt,t1,t1+.25),r=e.rot||0;let tr='',o=1-out;
+  const q=P(lt,t0,t0+.35),b=back(q);
+  if(e.a==='pop')tr=`scale(${L(0,1,b)*(1-out*.5)}) rotate(${r+Math.sin(p*3)*1.2}deg)`;
+  else if(e.a==='stamp'){const s=P(lt,t0,t0+.18);tr=`scale(${L(3.2,1,expo(s))}) rotate(${L(r-25,r,expo(s))}deg)`;o=C(s*4)*(1-out)}
+  else if(e.a==='glitch'){tr=`scale(${L(1.6,1,expo(q))}) translate(${p<.5?(Math.random()-.5)*30:Math.sin(p*40)*(Math.sin(p*1.7)>.93?8:0)}px,0)`;
+    const g=p<.6||Math.sin(p*2.3)>.95?14:3;el.style.textShadow=`${g}px 0 #ff0040,${-g}px 0 #00e5ff`}
+  else if(e.a==='slideL')tr=`translateX(${L(-1200,0,b)}px) rotate(${r}deg)`;
+  else if(e.a==='slideR')tr=`translateX(${L(1200,0,b)}px) rotate(${r}deg)`;
+  else if(e.a==='slideU')tr=`translateY(${L(500,0,b)}px) rotate(${r}deg)`;
+  else if(e.a==='float'){const f=P(lt,t0,t0+.6);tr=`scale(${L(.5,1,back(f))*(1+p*.012)}) translateY(${Math.sin(p*1.8)*12}px) rotate(${r+Math.sin(p*1.1)*1.5}deg)`;
+    el.style.filter=f<1?`blur(${(1-f)*16}px)`:'none';o=C(f*3)*(1-out)}
+  else if(e.a==='strike'){el.firstChild.style.width=(expo(P(lt,t0,t0+.3))*100)+'%';tr='rotate(-4deg)'}
+  else if(e.a==='type'){const n=Math.floor(C(p*22,0,e.text.length));el.textContent=e.text.slice(0,n)+(n<e.text.length?'▌':'');tr=''}
+  else if(e.a==='shakeE'){tr=`scale(${L(0,1,b)}) rotate(${r+Math.sin(p*25)*8}deg)`}
+  el.style.opacity=o;el.style.transform=`translate(-50%,-50%) ${tr}`}
+
+function render(t){
+  const k=SCENES.findIndex(s=>t>=s.t[0]&&t<s.t[1]);
+  SCENES.forEach((s,i)=>$('sc'+i).style.display=i===k?'block':'none');
+  if(k<0){$('bg').style.background=FINAL.bg}else{const s=SCENES[k],lt=t-s.t[0];$('bg').style.background=s.bg;
+    s.E.forEach((e,i)=>anim($(`e${k}_${i}`),e,lt,s.t[1]-s.t[0]))}
+  // финал (последняя сцена-финал задаётся как обычная сцена в SCENES)
+  let sx=0,sy=0,rot=0,fl=0,zp=1;
+  for(const [a,amp] of IMP){const d=t-a;if(d>=0&&d<.4){const kk=Math.exp(-d*12)*amp;sx+=Math.sin(d*90)*26*kk;sy+=Math.cos(d*75)*20*kk;rot+=Math.sin(d*60)*1.1*kk;zp+=.06*kk}}
+  for(const s of SCENES){const d=t-s.t[0];if(d>=0&&d<.12)fl=Math.max(fl,(1-d/.12)*.85)}
+  $('stage').style.transform=`translate(${sx}px,${sy}px) rotate(${rot}deg) scale(${zp})`;$('flash').style.opacity=fl;
+  $('footer').style.display=k>0&&k<SCENES.length-1?'flex':'none';
+  $('grain').style.backgroundPosition=`${(t*977)%300}px ${(t*631)%300}px`;
+}
+window.render=render;
+window.ready=Promise.all([document.fonts.load('100px Russo'),document.fonts.load('900 46px Mont'),document.fonts.load('40px "Noto Color Emoji"')]).then(()=>document.fonts.ready).then(()=>{render(0);return true});
+render(0);
+</script>
+</body></html>
