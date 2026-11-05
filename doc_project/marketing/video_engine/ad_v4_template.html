@@ -89,7 +89,8 @@ PRODUCTS.forEach((p,k)=>{const base=1290,imgs=p.imgs||[p.img];
   imgs.forEach((s,i)=>h+=`<img class="prod" id="${p.id}Im${i}" src="${s}" style="left:${540-p.w/2}px;top:${base-p.h}px;width:${p.w}px;height:${p.h}px;object-fit:contain">`);
   if(p.inset)h+=`<div class="inset" id="${p.id}In"><img src="${p.inset}"></div>`;
   p.feats.forEach((f,i)=>h+=`<div class="row" id="${p.id}R${i}" style="top:${1340+i*104}px"><div class="n" style="color:${p.acd||'#141414'}">0${i+1}</div><div class="v">${f.v}</div><div class="l">${f.l}</div><div class="ln"></div></div>`);
-  if(p.price)h+=`<div class="tag" id="${p.id}Tag"><div class="a">ЦЕНА</div><div class="b">${p.price}</div><div class="sh" id="${p.id}TagSh"></div></div>`;
+  if(p.price)h+=`<div class="tag" id="${p.id}Tag"><div class="a">ЦЕНА</div><div class="b">${p.price}</div>${p.tagSub?`<div style="font:800 26px Man;opacity:.85;margin-top:6px;white-space:nowrap">${p.tagSub}</div>`:''}<div class="sh" id="${p.id}TagSh"></div></div>`;
+  if(p.note)h+=`<div style="position:absolute;left:150px;width:780px;text-align:center;top:1302px;font:500 24px Man;color:#8a8178;font-style:italic">${p.note}</div>`;
   host.insertAdjacentHTML('beforeend',h+'</div>')});
 
 function rise(id,t,t0,d=.6){const q=expo(P(t,t0,t0+d)),s=$(id).firstChild;s.style.transform=`translateY(${L(110,0,q)}%)`}
