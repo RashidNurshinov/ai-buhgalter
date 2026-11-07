@@ -1,0 +1,136 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<!-- Шаблон v4 «Журнал»: светлый фон, крупная типографика Unbounded/Manrope, товар на цветной арке,
+     характеристики нумерованным списком с прорисовкой линий, ценник-плашка, переходы — цветная шторка снизу вверх.
+     Правится только PRODUCTS (+ INTRO_W). render(t) рисует кадр на момент t. -->
+<style>
+@font-face{font-family:Unb;src:url(fonts/Unbounded-800.ttf);font-weight:800}
+@font-face{font-family:Unb;src:url(fonts/Unbounded-500.ttf);font-weight:500}
+@font-face{font-family:Man;src:url(fonts/Manrope-800.ttf);font-weight:800}
+@font-face{font-family:Man;src:url(fonts/Manrope-500.ttf);font-weight:500}
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#f4efe8}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden;background:#f4efe8}
+.scene{position:absolute;left:0;top:0;width:1080px;height:1920px;display:none;overflow:hidden;background:#f4efe8}
+.mask{position:absolute;overflow:hidden;white-space:nowrap}
+.mask>span{display:inline-block}
+.idx{position:absolute;left:70px;top:120px;font:800 40px Man;letter-spacing:4px}
+.rule{position:absolute;left:220px;top:142px;height:4px;width:0}
+.cat{position:absolute;left:70px;top:190px;font:800 38px Man;letter-spacing:8px;color:#6b645c;text-transform:uppercase;white-space:nowrap}
+.nm{left:62px;top:250px;font:800 132px Unb;color:#141414;line-height:1.1;letter-spacing:-2px}
+.sub{position:absolute;left:70px;top:420px;font:500 44px Man;color:#6b645c;white-space:nowrap}
+.arch{position:absolute;left:150px;top:540px;width:780px;height:760px;border-radius:390px 390px 40px 40px}
+.prod{position:absolute;will-change:transform,opacity;filter:drop-shadow(0 30px 30px rgba(0,0,0,.25))}
+.shadow{position:absolute;height:50px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,0,0,.35),rgba(0,0,0,0) 70%)}
+.row{position:absolute;left:70px;width:940px;height:96px}
+.row .n{position:absolute;left:0;top:26px;font:800 30px Man;letter-spacing:2px}
+.row .v{position:absolute;left:80px;top:12px;font:800 56px Unb;color:#141414;white-space:nowrap}
+.row .l{position:absolute;right:0;top:24px;font:500 38px Man;color:#6b645c;white-space:nowrap;text-align:right}
+.row .ln{position:absolute;left:0;bottom:0;height:3px;background:#d8cfc3;width:0}
+.tag{position:absolute;right:60px;top:600px;background:#141414;color:#fff;border-radius:28px;padding:20px 40px 24px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.3);overflow:hidden}
+.tag .a{font:800 28px Man;letter-spacing:8px;opacity:.7}
+.tag .b{font:800 76px Unb;white-space:nowrap;line-height:1.1}
+.tag .sh{position:absolute;top:0;width:120px;height:100%;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.35),rgba(255,255,255,0))}
+.inset{position:absolute;left:70px;top:1010px;width:420px;height:300px;border-radius:24px;overflow:hidden;border:8px solid #fff;box-shadow:0 20px 40px rgba(0,0,0,.25)}
+.inset img{width:100%;height:100%;object-fit:cover;display:block}
+#curtain{position:absolute;left:0;top:0;width:1080px;height:1920px;display:none}
+#foot{position:absolute;left:70px;top:1810px;width:940px;border-top:3px solid #141414;padding-top:18px;font:800 32px Man;color:#141414;display:flex;justify-content:space-between}
+.big{left:0;width:1080px;text-align:center;font:800 150px Unb;color:#141414;letter-spacing:-3px}
+</style></head>
+<body>
+<div id="stage">
+  <div id="A" class="scene">
+    <div class="mask big" id="aW1" style="top:560px"><span></span></div>
+    <div class="mask big" id="aW2" style="top:740px;color:#e30613"><span></span></div>
+    <div id="aRule" style="position:absolute;left:340px;top:960px;height:8px;width:400px;background:#141414;transform-origin:0 0"></div>
+    <div class="mask" id="aTag" style="left:0;width:1080px;text-align:center;top:1010px;font:800 40px Man;letter-spacing:6px;color:#6b645c"><span>ТЕХНИКА И МЕБЕЛЬ ДЛЯ ДОМА</span></div>
+    <div id="aLogo" style="position:absolute;left:390px;top:1180px;width:300px;height:250px;background:#fff;border-radius:40px;box-shadow:0 20px 50px rgba(0,0,0,.15)"><img src="img/logo_full.png" style="position:absolute;left:30px;top:20px;width:240px"></div>
+  </div>
+  <div id="P"></div>
+  <div id="F" class="scene">
+    <div class="mask big" id="fW" style="top:300px;font-size:130px"><span>ЖДЁМ ВАС</span></div>
+    <div id="fLogo" style="position:absolute;left:340px;top:520px;width:400px;height:330px;background:#fff;border-radius:50px;box-shadow:0 20px 50px rgba(0,0,0,.15)"><img src="img/logo_full.png" style="position:absolute;left:40px;top:25px;width:320px"></div>
+    <div class="mask" id="fAddr" style="left:0;width:1080px;text-align:center;top:960px;font:800 84px Unb;color:#141414"><span>ул. Торговая, 3</span></div>
+    <div id="fPhone" style="position:absolute;left:90px;top:1140px;width:900px;height:180px;border-radius:90px;background:#141414;color:#fff;display:flex;align-items:center;justify-content:center;font:800 84px Unb">(35366) 2-18-16</div>
+    <div class="mask" id="fShop" style="left:0;width:1080px;text-align:center;top:1390px;font:800 40px Man;letter-spacing:6px;color:#e30613"><span>«ГАМБИТ» — ТЕХНИКА И МЕБЕЛЬ</span></div>
+  </div>
+  <div id="foot"><span>ГАМБИТ</span><span>ул. Торговая, 3</span><span>(35366) 2-18-16</span></div>
+  <div id="curtain"></div>
+</div>
+<script>
+const C=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),P=(t,a,b)=>C((t-a)/(b-a)),L=(a,b,x)=>a+(b-a)*x;
+const back=x=>{const c1=1.5,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const expo=x=>x>=1?1:1-Math.pow(2,-10*x),io=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const $=id=>document.getElementById(id);
+
+// ---- товары: правится только этот список
+// feats: {v,l,at}; price/priceAt; img или imgs:[..] (смена ракурса); inset — фото в интерьере (рамка слева)
+const INTRO=4.4, OUTRO=7.0, INTRO_W=['НОВИНКИ','ГАМБИТ'];
+const PRODUCTS=[
+ {id:'p1',t:[4.4,20.9],ac:'#cfe3ee',acd:'#2a6f97',cat:'Морозильник · No Frost',name:'LERAN',sub:'FSF 238 W NF',img:'img/ler238_cut.png',w:256,h:720,
+  feats:[{v:'229 л',l:'полезный объём',at:4.6},{v:'7',l:'отделений',at:6.6},{v:'10,8 кг',l:'заморозка в сутки',at:7.8},{v:'170 см',l:'высота',at:10.8}],price:'44 500 ₽',priceAt:13.3},
+ {id:'p2',t:[20.9,35.4],ac:'#e8dcef',acd:'#7a3fa0',cat:'Стирка + сушка · Candy',name:'NOVA',sub:'C33D4 474MBBW-07',img:'img/nova_open_cut.png',w:620,h:486,inset:'img/nova_room.jpg',insetAt:2.0,
+  feats:[{v:'7 кг',l:'стирка',at:3.0},{v:'4 кг',l:'сушка',at:4.9},{v:'1400',l:'оборотов отжима',at:7.6},{v:'ПАР',l:'инверторный мотор',at:9.8}],price:'42 500 ₽',priceAt:12.0},
+ {id:'p3',t:[35.4,50.2],ac:'#d9eedf',acd:'#2f8a57',cat:'Стирка + сушка · Candy',name:'SMART PRO',nmSize:104,sub:'CSOW4 1364T/2-07',img:'img/csow4_cut.png',w:470,h:578,
+  feats:[{v:'40 см',l:'глубина',at:3.7},{v:'6 + 4 кг',l:'стирка и сушка',at:6.9},{v:'1300',l:'оборотов',at:9.1},{v:'16',l:'программ',at:10.7}],price:'33 500 ₽',priceAt:12.1},
+ {id:'p4',t:[50.2,64.8],ac:'#e2ddd6',acd:'#3a3a3a',cat:'Шкаф · Империал',name:'ФЕНИКС-3',nmSize:118,sub:'графит · 2 двери + 3 ящика',img:'img/fenix3g_cut.png',w:296,h:700,
+  feats:[{v:'2 + 3',l:'двери и ящики',at:4.2},{v:'80 см',l:'ширина',at:6.6},{v:'220 см',l:'высота',at:8.0}],price:'17 740 ₽',priceAt:10.9},
+];
+// ---- конец списка
+
+const END=PRODUCTS[PRODUCTS.length-1].t[1];
+const SC=[['A',0,INTRO],...PRODUCTS.map(p=>[p.id,p.t[0],p.t[1]]),['F',END,END+OUTRO+5]];
+const DARK=['#141414','#e30613'];
+$('aW1').firstChild.textContent=INTRO_W[0];$('aW2').firstChild.textContent=INTRO_W[1];
+
+const host=$('P');
+PRODUCTS.forEach((p,k)=>{const base=1290,imgs=p.imgs||[p.img];
+  let h=`<div class="scene" id="${p.id}">
+    <div class="idx" id="${p.id}Idx" style="color:${p.acd||'#141414'}">0${k+1} / 0${PRODUCTS.length}</div>
+    <div class="rule" id="${p.id}Rule" style="background:${p.acd||'#141414'}"></div>
+    <div class="cat" id="${p.id}Cat">${p.cat}</div>
+    <div class="mask nm" id="${p.id}Nm" style="${p.nmSize?`font-size:${p.nmSize}px`:''}"><span>${p.name}</span></div>
+    <div class="sub" id="${p.id}Sub">${p.sub}</div>
+    <div class="arch" id="${p.id}Arch" style="background:${p.ac}"></div>
+    <div class="shadow" id="${p.id}Sh" style="left:${540-p.w*.6}px;top:${base-28}px;width:${p.w*1.2}px"></div>`;
+  imgs.forEach((s,i)=>h+=`<img class="prod" id="${p.id}Im${i}" src="${s}" style="left:${540-p.w/2}px;top:${base-p.h}px;width:${p.w}px;height:${p.h}px;object-fit:contain">`);
+  if(p.inset)h+=`<div class="inset" id="${p.id}In"><img src="${p.inset}"></div>`;
+  p.feats.forEach((f,i)=>h+=`<div class="row" id="${p.id}R${i}" style="top:${1340+i*104}px"><div class="n" style="color:${p.acd||'#141414'}">0${i+1}</div><div class="v">${f.v}</div><div class="l">${f.l}</div><div class="ln"></div></div>`);
+  if(p.price)h+=`<div class="tag" id="${p.id}Tag"><div class="a">ЦЕНА</div><div class="b">${p.price}</div><div class="sh" id="${p.id}TagSh"></div></div>`;
+  host.insertAdjacentHTML('beforeend',h+'</div>')});
+
+function rise(id,t,t0,d=.6){const q=expo(P(t,t0,t0+d)),s=$(id).firstChild;s.style.transform=`translateY(${L(110,0,q)}%)`}
+function product(p,t){const s=p.t[0],lt=t-s,id=p.id,imgs=p.imgs||[p.img];
+  $(id+'Idx').style.opacity=P(t,s+.1,s+.4);$(id+'Rule').style.width=(expo(P(t,s+.2,s+.8))*780)+'px';
+  const qc=P(t,s+.3,s+.7);$(id+'Cat').style.opacity=qc;$(id+'Cat').style.letterSpacing=L(20,8,expo(qc))+'px';
+  rise(id+'Nm',t,s+.35,.7);const qs=P(t,s+.8,s+1.2);$(id+'Sub').style.opacity=qs;$(id+'Sub').style.transform=`translateY(${L(20,0,expo(qs))}px)`;
+  const qa=io(P(t,s+.2,s+1.0));$(id+'Arch').style.clipPath=`inset(${L(100,0,qa)}% 0 0 0 round 390px 390px 40px 40px)`;
+  const q=P(t,s+.6,s+1.4),e=back(q),fl=Math.sin(lt*1.4)*6;
+  imgs.forEach((_,i)=>{const el=$(id+'Im'+i);let o=1;if(imgs.length>1){const sw=s+(p.swapAt||(p.t[1]-s)*.5);o=i===0?1-P(t,sw,sw+.6):P(t,sw,sw+.6)}
+    el.style.opacity=C(q*2)*o;el.style.transform=`translateY(${L(120,0,e)+fl}px) scale(${L(.85,1,e)*(1+lt*.004)})`});
+  $(id+'Sh').style.opacity=C(q*2)*(1-.2*Math.sin(lt*1.4));
+  if(p.inset){const a=s+(p.insetAt||3),qi=P(t,a,a+.6);$(id+'In').style.opacity=C(qi*2);$(id+'In').style.transform=`translateY(${L(80,0,back(qi))}px) rotate(${L(-12,-4,expo(qi))}deg)`}
+  p.feats.forEach((f,i)=>{const a=s+f.at,qr=P(t,a,a+.5),el=$(id+'R'+i);el.style.opacity=C(qr*2);el.style.transform=`translateX(${L(-60,0,expo(qr))}px)`;
+    el.querySelector('.ln').style.width=(expo(P(t,a+.1,a+.9))*100)+'%'});
+  if(p.price){const a=s+p.priceAt,qt=P(t,a,a+.5),el=$(id+'Tag');el.style.opacity=C(qt*3);
+    el.style.transform=`translateX(${L(500,0,back(qt))}px) rotate(${L(8,-3,expo(qt))}deg)`;$(id+'TagSh').style.left=(((t-a)*600)%1400-300)+'px'}
+}
+function render(t){
+  const cur=SC.find(s=>t>=s[1]&&t<s[2])||SC[SC.length-1];
+  SC.forEach(s=>$(s[0]).style.display=s===cur?'block':'none');
+  const id=cur[0],T=cur[1];
+  if(id==='A'){rise('aW1',t,.2,.7);rise('aW2',t,.55,.7);$('aRule').style.transform=`scaleX(${expo(P(t,1.1,1.7))})`;rise('aTag',t,1.4,.6);
+    const ql=P(t,1.9,2.5);$('aLogo').style.opacity=C(ql*2);$('aLogo').style.transform=`scale(${L(.6,1,back(ql))})`}
+  else if(id==='F'){rise('fW',t,T+.2,.7);const ql=P(t,T+.6,T+1.2);$('fLogo').style.opacity=C(ql*2);$('fLogo').style.transform=`scale(${L(.6,1,back(ql))})`;
+    rise('fAddr',t,T+1.2,.6);const qp=P(t,T+1.8,T+2.3);$('fPhone').style.transform=`scale(${L(0,1,back(qp))*(t>T+2.5?1+.02*Math.sin((t-T)*5):1)})`;rise('fShop',t,T+2.6,.6)}
+  else product(PRODUCTS.find(p=>p.id===id),t);
+  // шторка: цветная панель снизу вверх на стыке сцен
+  let cv=null;for(let i=1;i<SC.length;i++){const c=SC[i][1];if(t>c-.35&&t<c+.35){const pr=PRODUCTS.find(p=>p.id===SC[i][0]);cv=[c,pr?pr.ac:'#141414'];break}}
+  if(cv){const [c,col]=cv,q=io(P(t,c-.35,c+.35));$('curtain').style.display='block';$('curtain').style.background=col;
+    $('curtain').style.clipPath=q<.5?`inset(${L(100,0,q*2)}% 0 0 0)`:`inset(0 0 ${L(0,100,(q-.5)*2)}% 0)`}else $('curtain').style.display='none';
+  $('foot').style.display=id!=='A'&&id!=='F'?'flex':'none';
+}
+window.render=render;
+window.ready=Promise.all([document.fonts.load('800 100px Unb'),document.fonts.load('500 40px Unb'),document.fonts.load('800 40px Man'),document.fonts.load('500 40px Man')]).then(()=>document.fonts.ready).then(()=>{render(0);return true});
+render(0);
+</script>
+</body></html>
